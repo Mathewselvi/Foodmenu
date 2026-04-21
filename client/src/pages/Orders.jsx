@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, CheckCircle2, History } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, History, Printer } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import API_URL from '../api';
 
@@ -59,6 +59,213 @@ const Orders = () => {
         }
     };
 
+    const printBill = (order) => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Bill - ${order.guestName}</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                        
+                        /* Removes default browser headers and footers (date, title, url) */
+                        @page { 
+                            size: auto;
+                            margin: 0mm; 
+                        }
+                        
+                        body { 
+                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+                            padding: 40px; 
+                            max-width: 500px; 
+                            margin: 0 auto; 
+                            color: #1f2937; 
+                            background: white;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        .bill-wrapper {
+                            padding: 20px;
+                        }
+
+                        h1 { 
+                            text-align: center; 
+                            font-size: 26px; 
+                            margin: 0 0 6px 0; 
+                            font-weight: 700;
+                            letter-spacing: -0.5px;
+                            color: #111827;
+                            text-transform: uppercase;
+                        }
+                        
+                        .subtitle { 
+                            text-align: center; 
+                            font-size: 12px; 
+                            margin-bottom: 30px; 
+                            color: #6b7280;
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                            font-weight: 600;
+                        }
+                        
+                        .info-section {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 24px;
+                            padding-bottom: 16px;
+                            border-bottom: 1px solid #e5e7eb;
+                        }
+
+                        .info-block {
+                            display: flex;
+                            flex-direction: column;
+                        }
+
+                        .info-label {
+                            font-size: 11px;
+                            color: #6b7280;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            margin-bottom: 4px;
+                            font-weight: 500;
+                        }
+
+                        .info-value {
+                            font-weight: 600;
+                            font-size: 14px;
+                            color: #111827;
+                        }
+                        
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-bottom: 24px;
+                        }
+                        
+                        th {
+                            text-align: left; 
+                            padding: 8px 0; 
+                            font-size: 12px; 
+                            color: #6b7280;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            border-bottom: 2px solid #e5e7eb;
+                            font-weight: 600;
+                        }
+
+                        td { 
+                            text-align: left; 
+                            padding: 14px 0; 
+                            font-size: 14px; 
+                            border-bottom: 1px solid #f3f4f6;
+                            color: #374151;
+                            font-weight: 500;
+                        }
+
+                        .item-name {
+                            font-weight: 600;
+                            color: #111827;
+                        }
+
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                        
+                        .total-section {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding-top: 16px;
+                            border-top: 2px solid #111827;
+                            margin-top: 8px;
+                        }
+
+                        .total-label {
+                            font-size: 16px;
+                            font-weight: 600;
+                            color: #374151;
+                            text-transform: uppercase;
+                        }
+
+                        .total-amount { 
+                            font-size: 24px; 
+                            font-weight: 700; 
+                            text-align: right; 
+                            color: #111827;
+                        }
+
+                        .footer {
+                            margin-top: 50px;
+                            text-align: center;
+                            font-size: 13px;
+                            color: #6b7280;
+                        }
+                        
+                        .footer p { margin: 4px 0; }
+
+                        @media print {
+                            body { padding: 15px; max-width: 100%; }
+                            .bill-wrapper { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="bill-wrapper">
+                        <h1>Resort Beyond Heaven</h1>
+                        <div class="subtitle">Guest Receipt</div>
+                        
+                        <div class="info-section">
+                            <div class="info-block">
+                                <span class="info-label">Guest Name</span>
+                                <span class="info-value">${order.guestName}</span>
+                            </div>
+                            <div class="info-block text-right">
+                                <span class="info-label">Date & Time</span>
+                                <span class="info-value">${new Date(order.createdAt).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item Summary</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${order.items.map(item => `
+                                    <tr>
+                                        <td class="item-name">${item.name}</td>
+                                        <td class="text-center">${item.qty}</td>
+                                        <td class="text-right">₹${item.price * item.qty}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        
+                        <div class="total-section">
+                            <span class="total-label">Total Paid</span>
+                            <span class="total-amount">₹${order.totalAmount}</span>
+                        </div>
+
+                        <div class="footer">
+                            <p>Thank you for choosing Resort Beyond Heaven!</p>
+                            <p>Have a wonderful stay.</p>
+                        </div>
+                    </div>
+                    <script>
+                        window.onload = function() { 
+                            window.print(); 
+                            setTimeout(function(){ window.close(); }, 500); 
+                        }
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
     // Calculate aggregated quantities of each dish across all Pending/Completed orders
     const dishCounts = useMemo(() => {
         const counts = {};
@@ -103,7 +310,7 @@ const Orders = () => {
                     ) : (
                         orders.map(order => (
                             <div key={order._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
-                                <div className="flex justify-between items-start mb-4 border-b border-gray-50 pb-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-gray-50 pb-4">
                                     <div>
                                         <div className="flex items-center gap-3 mb-1">
                                             <span className="font-extrabold text-lg text-gray-900">Guest: {order.guestName}</span>
@@ -121,27 +328,41 @@ const Orders = () => {
                                     </div>
                                     
                                     {order.status === 'Pending' ? (
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                            <button 
+                                                onClick={() => printBill(order)}
+                                                className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2 flex-1 sm:flex-none justify-center flex items-center gap-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+                                            >
+                                                <Printer size={16} /> Print Bill
+                                            </button>
                                             <button 
                                                 onClick={() => updateStatus(order._id, 'Completed')}
-                                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
+                                                className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
                                             >
                                                 Mark Complete
                                             </button>
                                             <button 
                                                 onClick={() => updateStatus(order._id, 'Cancelled')}
-                                                className="bg-red-50 text-red-700 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
+                                                className="bg-red-50 text-red-700 hover:bg-red-100 flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
                                             >
                                                 Cancel
                                             </button>
                                         </div>
                                     ) : (
-                                        <button 
-                                            onClick={() => deleteOrder(order._id)}
-                                            className="bg-gray-100 text-gray-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
-                                        >
-                                            Delete Record
-                                        </button>
+                                        <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                            <button 
+                                                onClick={() => printBill(order)}
+                                                className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2 flex-1 sm:flex-none justify-center flex items-center gap-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+                                            >
+                                                <Printer size={16} /> Print Bill
+                                            </button>
+                                            <button 
+                                                onClick={() => deleteOrder(order._id)}
+                                                className="bg-gray-100 text-gray-500 hover:text-red-600 hover:bg-red-50 flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+                                            >
+                                                Delete Record
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                                 

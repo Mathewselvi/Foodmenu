@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import { Search, Plus, Edit, X } from 'lucide-react';
+import { Search, Plus, Edit, X, Trash2, CheckSquare, Square, Check, ToggleLeft } from 'lucide-react';
 import API_URL from '../api';
 
 const Admin = () => {
@@ -15,6 +15,8 @@ const Admin = () => {
     const [restaurantEditId, setRestaurantEditId] = useState(null);
     const [editId, setEditId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [bulkCategory, setBulkCategory] = useState('');
 
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) return products;
@@ -24,6 +26,11 @@ const Admin = () => {
             p.category.toLowerCase().includes(query)
         );
     }, [products, searchQuery]);
+
+    useEffect(() => {
+        // Clear selections if search changes or products change
+        setSelectedIds([]);
+    }, [searchQuery, selectedRestaurant]);
 
     const categories = [
         'BEVERAGES', 'SANDWICH', 'BREAKFAST', 'SHORT BITES', 'SOUPS', 
@@ -180,6 +187,72 @@ const Admin = () => {
         }
     };
 
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(filteredProducts.map(p => p._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(selId => selId !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`)) {
+            try {
+                await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, { method: 'DELETE' })));
+                showNotification(`${selectedIds.length} items deleted successfully`);
+                setSelectedIds([]);
+                fetchProducts();
+            } catch (error) {
+                console.error(error);
+                showNotification('Error during bulk delete', 'error');
+            }
+        }
+    };
+
+    const handleBulkAvailability = async (isAvailable) => {
+        if (selectedIds.length === 0) return;
+        try {
+            await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isAvailable })
+            })));
+            showNotification(`${selectedIds.length} items marked as ${isAvailable ? 'Available' : 'Sold Out'}`);
+            setSelectedIds([]);
+            fetchProducts();
+        } catch (error) {
+            console.error(error);
+            showNotification('Error updating items', 'error');
+        }
+    };
+
+    const handleBulkCategoryChange = async () => {
+        if (selectedIds.length === 0 || !bulkCategory) return;
+        try {
+            await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: bulkCategory })
+            })));
+            showNotification(`${selectedIds.length} items moved to ${bulkCategory}`);
+            setSelectedIds([]);
+            setBulkCategory('');
+            fetchProducts();
+        } catch (error) {
+            console.error(error);
+            showNotification('Error updating categories', 'error');
+        }
+    };
+
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b pb-4">Admin Dashboard</h1>
@@ -299,11 +372,68 @@ const Admin = () => {
                 </div>
             </div>
 
+            {/* Bulk Actions */}
+            <div className={`bg-blue-50 border ${selectedIds.length > 0 ? 'border-blue-300 shadow-md' : 'border-blue-100 opacity-70'} rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 transition-all`}>
+                <div className={`font-bold ${selectedIds.length > 0 ? 'text-blue-800' : 'text-gray-500'}`}>
+                    {selectedIds.length} item{selectedIds.length !== 1 ? 's' : ''} selected
+                </div>
+                <div className="flex flex-wrap gap-2 items-center w-full md:w-auto">
+                    <button 
+                        onClick={() => handleBulkAvailability(true)} 
+                        disabled={selectedIds.length === 0}
+                        className="bg-white border border-blue-200 text-green-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shadow-sm"
+                    >
+                        <Check size={16} /> Mark Available
+                    </button>
+                    <button 
+                        onClick={() => handleBulkAvailability(false)} 
+                        disabled={selectedIds.length === 0}
+                        className="bg-white border border-blue-200 text-orange-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shadow-sm"
+                    >
+                        <X size={16} /> Mark Sold Out
+                    </button>
+                    
+                    <div className="flex items-center gap-1 border-l border-blue-200 pl-2 ml-1">
+                        <select 
+                            value={bulkCategory} 
+                            onChange={(e) => setBulkCategory(e.target.value)}
+                            disabled={selectedIds.length === 0}
+                            className="px-2 py-2 border rounded-lg focus:ring-blue-500 text-sm disabled:opacity-50"
+                        >
+                            <option value="" disabled>Change Category</option>
+                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                        <button 
+                            onClick={handleBulkCategoryChange} 
+                            disabled={selectedIds.length === 0 || !bulkCategory} 
+                            className="bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm"
+                        >
+                            Apply
+                        </button>
+                    </div>
+                    
+                    <button 
+                        onClick={handleBulkDelete} 
+                        disabled={selectedIds.length === 0}
+                        className="bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shadow-sm ml-auto md:ml-2"
+                    >
+                        <Trash2 size={16} /> Delete Selected
+                    </button>
+                </div>
+            </div>
+
             <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100 mb-20">
                 <table className="min-w-full text-left text-sm">
                     <thead className="bg-gray-50 text-gray-700">
                         <tr>
-
+                            <th className="px-6 py-3 w-10">
+                                <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 text-green-600 rounded border-gray-300"
+                                    checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
+                                    onChange={handleSelectAll}
+                                />
+                            </th>
                             <th className="px-6 py-3">Name</th>
                             <th className="px-6 py-3">Price</th>
                             <th className="px-6 py-3">Category</th>
@@ -313,8 +443,15 @@ const Admin = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {filteredProducts.map(product => (
-                            <tr key={product._id} className="hover:bg-gray-50">
-
+                            <tr key={product._id} className={`hover:bg-gray-50 ${selectedIds.includes(product._id) ? 'bg-blue-50/50' : ''}`}>
+                                <td className="px-6 py-4">
+                                    <input 
+                                        type="checkbox" 
+                                        className="w-4 h-4 text-green-600 rounded border-gray-300"
+                                        checked={selectedIds.includes(product._id)}
+                                        onChange={() => handleSelectOne(product._id)}
+                                    />
+                                </td>
                                 <td className="px-6 py-4 font-medium">{product.name}</td>
                                 <td className="px-6 py-4">₹{product.price}</td>
                                 <td className="px-6 py-4">

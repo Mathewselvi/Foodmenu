@@ -38,7 +38,7 @@ const Admin = () => {
         'BIRIYANI', 'FRIED RICE', 'NOODLES', 'VEG CURRY', 'BEEF', 
         'MUTTON', 'TANDOORI', 'SHAWARMA', 'SHAWAYA', 'MASALA SHAWAYA', 
         'CHICKEN SPECIAL', 'ALFAHAM', 'LIME JUICE', 'FRESH PULP', 
-        'SIGNATURE', 'LASSI', 'MILKSHAKE', 'SUNDAES'
+        'SIGNATURE', 'LASSI', 'MILKSHAKE', 'SUNDAES', 'COOL DRINKS'
     ];
 
     const fetchProducts = async () => {

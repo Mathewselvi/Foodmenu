@@ -19,6 +19,11 @@ const productSchema = mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        restaurant: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Restaurant',
+            required: true,
+        },
     },
     {
         timestamps: true,

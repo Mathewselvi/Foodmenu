@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, WifiOff } from 'lucide-react';
 import FoodCard from '../components/FoodCard';
 import { useNotification } from '../context/NotificationContext';
+import { useRestaurant } from '../context/RestaurantContext';
 import API_URL from '../api';
 
 const Home = () => {
@@ -11,11 +12,14 @@ const Home = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const { showNotification } = useNotification();
+    const { selectedRestaurant, restaurants, changeRestaurant } = useRestaurant();
 
     useEffect(() => {
         const fetchProducts = async () => {
+            if (!selectedRestaurant) return;
             try {
-                const res = await fetch(`${API_URL}/products`);
+                setLoading(true);
+                const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
                 if (!res.ok) throw new Error('Failed to fetch products');
                 const data = await res.json();
                 setProducts(data);
@@ -29,7 +33,7 @@ const Home = () => {
         };
 
         fetchProducts();
-    }, [showNotification]);
+    }, [showNotification, selectedRestaurant]);
 
     const categories = useMemo(() => {
         const cats = ['All', ...new Set(products.map(item => item.category))];
@@ -51,11 +55,47 @@ const Home = () => {
         return result;
     }, [activeCategory, products, searchQuery]);
 
+    if (!selectedRestaurant) {
+        return (
+            <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
+                    <div>
+                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                            Select a Restaurant
+                        </h2>
+                        <p className="mt-2 text-center text-sm text-gray-600">
+                            Please select a restaurant to view its menu and order food.
+                        </p>
+                    </div>
+                    <div className="mt-8 space-y-4">
+                        {restaurants.map((restaurant) => (
+                            <button
+                                key={restaurant._id}
+                                onClick={() => changeRestaurant(restaurant)}
+                                className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-md hover:shadow-lg"
+                            >
+                                {restaurant.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white min-h-screen pb-24 pt-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Our Menu</h2>
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{selectedRestaurant.name} Menu</h2>
+                        <button 
+                            onClick={() => changeRestaurant(null)}
+                            className="text-sm text-green-600 hover:text-green-800 underline"
+                        >
+                            Change Restaurant
+                        </button>
+                    </div>
                     
                     <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                         {/* Search Bar */}

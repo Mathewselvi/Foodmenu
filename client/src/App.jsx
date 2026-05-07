@@ -6,14 +6,15 @@ import Admin from './pages/Admin';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import { CartProvider } from './context/CartContext';
-
+import { RestaurantProvider } from './context/RestaurantContext';
 import { NotificationProvider } from './context/NotificationContext';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
     <NotificationProvider>
-      <CartProvider>
+      <RestaurantProvider>
+        <CartProvider>
         <Router>
           <ScrollToTop />
           <div className="font-sans bg-gray-50 min-h-screen">
@@ -28,6 +29,7 @@ function App() {
           </div>
         </Router>
       </CartProvider>
+      </RestaurantProvider>
     </NotificationProvider>
   );
 }

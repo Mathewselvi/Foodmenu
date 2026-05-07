@@ -21,6 +21,11 @@ const orderSchema = mongoose.Schema(
             type: String,
             enum: ['Pending', 'Completed', 'Cancelled'],
             default: 'Pending',
+        },
+        restaurant: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Restaurant',
+            required: true,
         }
     },
     {

@@ -1,14 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
-import { Search } from 'lucide-react';
+import { useRestaurant } from '../context/RestaurantContext';
+import { Search, Plus, Edit, X } from 'lucide-react';
 import API_URL from '../api';
 
 const Admin = () => {
     const { showNotification } = useNotification();
+    const { selectedRestaurant, restaurants, changeRestaurant, setRestaurants } = useRestaurant();
     const [products, setProducts] = useState([]);
     const [formData, setFormData] = useState({
         name: '', price: '', category: 'BEVERAGES', isAvailable: true
     });
+    const [restaurantFormData, setRestaurantFormData] = useState({ name: '' });
+    const [restaurantEditId, setRestaurantEditId] = useState(null);
     const [editId, setEditId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -31,8 +35,9 @@ const Admin = () => {
     ];
 
     const fetchProducts = async () => {
+        if (!selectedRestaurant) return;
         try {
-            const res = await fetch(`${API_URL}/products`);
+            const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
             if (!res.ok) throw new Error('Fetch failed');
             const data = await res.json();
             setProducts(data);
@@ -42,9 +47,21 @@ const Admin = () => {
         }
     };
 
+    const fetchRestaurants = async () => {
+        try {
+            const res = await fetch(`${API_URL}/restaurants`);
+            if (res.ok) {
+                const data = await res.json();
+                setRestaurants(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch restaurants:", error);
+        }
+    };
+
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [selectedRestaurant]);
 
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -59,10 +76,12 @@ const Admin = () => {
                 : `${API_URL}/products`;
             const method = editId ? 'PUT' : 'POST';
 
+            const payload = { ...formData, restaurant: selectedRestaurant._id };
+
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error('Save failed');
@@ -113,9 +132,112 @@ const Admin = () => {
         }
     };
 
+    const handleRestaurantSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const url = restaurantEditId 
+                ? `${API_URL}/restaurants/${restaurantEditId}` 
+                : `${API_URL}/restaurants`;
+            const method = restaurantEditId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(restaurantFormData)
+            });
+
+            if (!res.ok) throw new Error('Save failed');
+
+            showNotification(restaurantEditId ? 'Restaurant updated successfully!' : 'New restaurant added!');
+            setRestaurantFormData({ name: '' });
+            setRestaurantEditId(null);
+            fetchRestaurants();
+        } catch (error) {
+            console.error(error);
+            showNotification('Error saving restaurant', 'error');
+        }
+    };
+
+    const handleRestaurantEdit = (restaurant) => {
+        setRestaurantFormData({ name: restaurant.name });
+        setRestaurantEditId(restaurant._id);
+    };
+
+    const handleRestaurantDelete = async (id) => {
+        if(window.confirm('Are you sure you want to delete this restaurant? This might orphan some products/orders.')) {
+            try {
+                const res = await fetch(`${API_URL}/restaurants/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                showNotification('Restaurant removed');
+                if (selectedRestaurant && selectedRestaurant._id === id) {
+                    changeRestaurant(null);
+                }
+                fetchRestaurants();
+            } catch (error) {
+                console.error(error);
+                showNotification('Could not delete restaurant', 'error');
+            }
+        }
+    };
+
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b pb-4">Admin Dashboard</h1>
+
+            {/* Restaurant Management */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
+                <h2 className="text-xl font-bold mb-4">Manage Restaurants</h2>
+                <form onSubmit={handleRestaurantSubmit} className="flex flex-col sm:flex-row gap-4 mb-6">
+                    <input 
+                        name="name" value={restaurantFormData.name} onChange={(e) => setRestaurantFormData({ name: e.target.value })} 
+                        placeholder="Restaurant Name" required 
+                        className="flex-1 px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full" 
+                    />
+                    <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 flex items-center gap-2">
+                        {restaurantEditId ? <><Edit size={16}/> Update</> : <><Plus size={16}/> Add</>}
+                    </button>
+                    {restaurantEditId && (
+                        <button type="button" onClick={() => { setRestaurantEditId(null); setRestaurantFormData({ name: '' })}} className="bg-gray-400 text-white px-6 py-2 rounded-lg font-bold">
+                            Cancel
+                        </button>
+                    )}
+                </form>
+
+                <div className="flex flex-wrap gap-2">
+                    {restaurants.map((restaurant) => (
+                        <div key={restaurant._id} className="flex items-center gap-2 bg-gray-50 border px-4 py-2 rounded-lg">
+                            <span className="font-medium">{restaurant.name}</span>
+                            <button onClick={() => handleRestaurantEdit(restaurant)} className="text-blue-600 hover:text-blue-800 ml-2">
+                                <Edit size={14} />
+                            </button>
+                            <button onClick={() => handleRestaurantDelete(restaurant._id)} className="text-red-500 hover:text-red-700 ml-1">
+                                <X size={14} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Select Restaurant Context */}
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+                <label className="font-bold text-gray-700">Managing Menu For:</label>
+                <select 
+                    value={selectedRestaurant?._id || ''} 
+                    onChange={(e) => {
+                        const rest = restaurants.find(r => r._id === e.target.value);
+                        changeRestaurant(rest);
+                    }}
+                    className="px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full sm:min-w-[250px]"
+                >
+                    <option value="" disabled>Select a restaurant</option>
+                    {restaurants.map(r => (
+                        <option key={r._id} value={r._id}>{r.name}</option>
+                    ))}
+                </select>
+            </div>
+
+            {selectedRestaurant && (
+                <>
             
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
                 <h2 className="text-xl font-bold mb-4">{editId ? 'Edit Item' : 'Add New Item'}</h2>
@@ -215,6 +337,8 @@ const Admin = () => {
                     </tbody>
                 </table>
             </div>
+            </>
+            )}
         </div>
     );
 };

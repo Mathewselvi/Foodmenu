@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Send } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import { useRestaurant } from '../context/RestaurantContext';
 import API_URL from '../api';
 
 const Checkout = () => {
@@ -12,6 +13,7 @@ const Checkout = () => {
     const [orderSuccess, setOrderSuccess] = useState(false);
     const navigate = useNavigate();
     const { showNotification } = useNotification();
+    const { selectedRestaurant } = useRestaurant();
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -31,7 +33,8 @@ const Checkout = () => {
                 qty: item.qty,
                 price: item.price
             })),
-            totalAmount: cartTotal
+            totalAmount: cartTotal,
+            restaurant: selectedRestaurant?._id
         };
 
         try {

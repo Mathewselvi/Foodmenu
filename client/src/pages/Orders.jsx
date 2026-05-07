@@ -1,17 +1,50 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, CheckCircle2, History, Printer } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, History, Printer, Edit, Plus, Minus, X, Search } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import { useRestaurant } from '../context/RestaurantContext';
 import API_URL from '../api';
 
 const Orders = () => {
     const { showNotification } = useNotification();
+    const { selectedRestaurant, restaurants, changeRestaurant } = useRestaurant();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [editingOrder, setEditingOrder] = useState(null);
+    const [products, setProducts] = useState([]);
+    const [editSearchQuery, setEditSearchQuery] = useState('');
+
+    const filteredEditProducts = useMemo(() => {
+        if (!editSearchQuery.trim()) return products;
+        const query = editSearchQuery.toLowerCase();
+        return products.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            p.category.toLowerCase().includes(query)
+        );
+    }, [products, editSearchQuery]);
+
+    const fetchProducts = async () => {
+        if (!selectedRestaurant) return;
+        try {
+            const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setProducts(data);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const fetchOrders = async () => {
+        if (!selectedRestaurant) {
+            setOrders([]);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/orders`);
+            const res = await fetch(`${API_URL}/orders?restaurantId=${selectedRestaurant._id}`);
             if (!res.ok) throw new Error('Fetch failed');
             const data = await res.json();
             setOrders(data);
@@ -25,7 +58,65 @@ const Orders = () => {
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+        fetchProducts();
+    }, [selectedRestaurant]);
+
+    const handleEditOrder = (order) => {
+        setEditingOrder(JSON.parse(JSON.stringify(order))); // Deep copy
+    };
+
+    const handleSaveOrder = async () => {
+        try {
+            const res = await fetch(`${API_URL}/orders/${editingOrder._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: editingOrder.items,
+                    totalAmount: editingOrder.totalAmount
+                })
+            });
+            if (!res.ok) throw new Error('Update failed');
+            showNotification('Order updated successfully');
+            setEditingOrder(null);
+            fetchOrders();
+        } catch (error) {
+            console.error(error);
+            showNotification('Failed to update order', 'error');
+        }
+    };
+
+    const updateOrderItemQty = (itemName, delta) => {
+        setEditingOrder(prev => {
+            const newItems = [...prev.items];
+            const itemIndex = newItems.findIndex(i => i.name === itemName);
+            
+            if (itemIndex >= 0) {
+                newItems[itemIndex].qty += delta;
+                if (newItems[itemIndex].qty <= 0) {
+                    newItems.splice(itemIndex, 1);
+                }
+            }
+            
+            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            return { ...prev, items: newItems, totalAmount: newTotal };
+        });
+    };
+
+    const addProductToOrder = (product) => {
+        setEditingOrder(prev => {
+            const newItems = [...prev.items];
+            const itemIndex = newItems.findIndex(i => i.name === product.name);
+            
+            if (itemIndex >= 0) {
+                newItems[itemIndex].qty += 1;
+            } else {
+                newItems.push({ name: product.name, price: product.price, qty: 1 });
+            }
+            
+            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            return { ...prev, items: newItems, totalAmount: newTotal };
+        });
+    };
 
     const updateStatus = async (id, status) => {
         try {
@@ -294,8 +385,30 @@ const Orders = () => {
                 </Link>
             </div>
 
-            <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b pb-4">Orders Dashboard</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-4">
+                <h1 className="text-3xl font-bold text-gray-900">Orders Dashboard</h1>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full md:w-auto">
+                    <label className="font-bold text-gray-700 whitespace-nowrap">Viewing Orders For:</label>
+                    <select 
+                        value={selectedRestaurant?._id || ''} 
+                        onChange={(e) => {
+                            const rest = restaurants.find(r => r._id === e.target.value);
+                            changeRestaurant(rest);
+                        }}
+                        className="px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full sm:min-w-[250px]"
+                    >
+                        <option value="" disabled>Select a restaurant</option>
+                        {restaurants.map(r => (
+                            <option key={r._id} value={r._id}>{r.name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
 
+            {!selectedRestaurant ? (
+                <div className="text-center py-20 text-gray-500">Please select a restaurant to view its orders.</div>
+            ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* Orders List */}
@@ -364,6 +477,14 @@ const Orders = () => {
                                             </button>
                                         </div>
                                     )}
+                                    {order.status === 'Pending' && (
+                                        <button 
+                                            onClick={() => handleEditOrder(order)}
+                                            className="bg-orange-50 text-orange-700 hover:bg-orange-100 flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+                                        >
+                                            <Edit size={16} /> Edit Order
+                                        </button>
+                                    )}
                                 </div>
                                 
                                 <div className="space-y-2">
@@ -411,6 +532,105 @@ const Orders = () => {
                 </div>
 
             </div>
+            )}
+
+            {/* Edit Order Modal */}
+            {editingOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl sm:text-2xl font-bold">Edit Order - {editingOrder.guestName}</h2>
+                            <button onClick={() => setEditingOrder(null)} className="text-gray-500 hover:text-gray-800">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 className="font-bold text-lg mb-4 text-gray-800 border-b pb-2">Current Items</h3>
+                                <div className="space-y-3">
+                                    {editingOrder.items.length === 0 ? (
+                                        <p className="text-gray-500 italic">No items in order.</p>
+                                    ) : editingOrder.items.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
+                                            <div>
+                                                <p className="font-semibold">{item.name}</p>
+                                                <p className="text-xs text-gray-500">₹{item.price}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <button onClick={() => updateOrderItemQty(item.name, -1)} className="bg-red-100 text-red-600 p-1 rounded hover:bg-red-200">
+                                                    <Minus size={14} />
+                                                </button>
+                                                <span className="font-bold w-4 text-center">{item.qty}</span>
+                                                <button onClick={() => updateOrderItemQty(item.name, 1)} className="bg-green-100 text-green-600 p-1 rounded hover:bg-green-200">
+                                                    <Plus size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                                    <span className="font-bold text-gray-700">New Total</span>
+                                    <span className="font-bold text-2xl">₹{editingOrder.totalAmount}</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 className="font-bold text-lg mb-4 text-gray-800 border-b pb-2">Add Products</h3>
+                                
+                                <div className="relative mb-4">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Search size={16} className="text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search by name or category..."
+                                        value={editSearchQuery}
+                                        onChange={(e) => setEditSearchQuery(e.target.value)}
+                                        className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-sm"
+                                    />
+                                </div>
+
+                                <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                                    {filteredEditProducts.length === 0 ? (
+                                        <p className="text-gray-500 text-sm italic">No products found.</p>
+                                    ) : (
+                                        filteredEditProducts.map(product => (
+                                            <div key={product._id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded border-b">
+                                                <div>
+                                                    <p className="font-medium text-sm">{product.name}</p>
+                                                    <p className="text-xs text-gray-500">₹{product.price} - {product.category}</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => addProductToOrder(product)}
+                                                    className="bg-blue-50 text-blue-600 p-1.5 rounded hover:bg-blue-100 transition-colors"
+                                                >
+                                                    <Plus size={16} />
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 pt-4 border-t flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end">
+                            <button 
+                                onClick={() => setEditingOrder(null)}
+                                className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleSaveOrder}
+                                className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

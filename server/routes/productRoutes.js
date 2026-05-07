@@ -7,7 +7,11 @@ const router = express.Router();
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find({});
+        const query = {};
+        if (req.query.restaurantId) {
+            query.restaurant = req.query.restaurantId;
+        }
+        const products = await Product.find(query);
         res.json(products);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
@@ -19,12 +23,13 @@ router.get('/', async (req, res) => {
 // @access  Public (for MVP admin)
 router.post('/', async (req, res) => {
     try {
-        const { name, price, category, isAvailable } = req.body;
+        const { name, price, category, isAvailable, restaurant } = req.body;
         const product = new Product({
             name,
             price,
             category,
-            isAvailable
+            isAvailable,
+            restaurant
         });
         const createdProduct = await product.save();
         res.status(201).json(createdProduct);
@@ -38,7 +43,7 @@ router.post('/', async (req, res) => {
 // @access  Public (for MVP admin)
 router.put('/:id', async (req, res) => {
     try {
-        const { name, price, category, isAvailable } = req.body;
+        const { name, price, category, isAvailable, restaurant } = req.body;
         const product = await Product.findById(req.params.id);
 
         if (product) {
@@ -46,6 +51,7 @@ router.put('/:id', async (req, res) => {
             product.price = price || product.price;
             product.category = category || product.category;
             product.isAvailable = isAvailable !== undefined ? isAvailable : product.isAvailable;
+            if (restaurant) product.restaurant = restaurant;
 
             const updatedProduct = await product.save();
             res.json(updatedProduct);

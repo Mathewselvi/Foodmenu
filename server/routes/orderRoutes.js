@@ -7,7 +7,7 @@ const router = express.Router();
 // @access  Public
 router.post('/', async (req, res) => {
     try {
-        const { guestName, items, totalAmount } = req.body;
+        const { guestName, items, totalAmount, restaurant } = req.body;
 
         if (items && items.length === 0) {
             return res.status(400).json({ message: 'No order items' });
@@ -15,7 +15,8 @@ router.post('/', async (req, res) => {
             const order = new Order({
                 guestName: guestName || 'Guest',
                 items,
-                totalAmount
+                totalAmount,
+                restaurant
             });
 
             const createdOrder = await order.save();
@@ -31,7 +32,11 @@ router.post('/', async (req, res) => {
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const orders = await Order.find({}).sort({ createdAt: -1 }); // Newest first
+        const query = {};
+        if (req.query.restaurantId) {
+            query.restaurant = req.query.restaurantId;
+        }
+        const orders = await Order.find(query).sort({ createdAt: -1 }); // Newest first
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
@@ -47,6 +52,12 @@ router.put('/:id', async (req, res) => {
 
         if (order) {
             order.status = req.body.status || order.status;
+            if (req.body.items) {
+                order.items = req.body.items;
+            }
+            if (req.body.totalAmount) {
+                order.totalAmount = req.body.totalAmount;
+            }
             const updatedOrder = await order.save();
             res.json(updatedOrder);
         } else {

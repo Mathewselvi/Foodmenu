@@ -33,7 +33,7 @@ const Checkout = () => {
                 qty: item.qty,
                 price: item.price
             })),
-            totalAmount: cartTotal,
+            totalAmount: cartTotal + 500,
             restaurant: selectedRestaurant?._id
         };
 
@@ -101,10 +101,18 @@ const Checkout = () => {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                        <div className="flex justify-between items-center text-lg">
-                            <span className="font-bold text-gray-700">Subtotal</span>
-                            <span className="font-black text-gray-900 text-2xl">₹{cartTotal}</span>
+                    <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
+                        <div className="flex justify-between items-center text-gray-600">
+                            <span>Subtotal</span>
+                            <span className="font-semibold text-gray-800">₹{cartTotal}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-gray-600 pb-2">
+                            <span>Service Fee</span>
+                            <span className="font-semibold text-gray-800">₹500</span>
+                        </div>
+                        <div className="flex justify-between items-center text-lg pt-3 border-t border-gray-100">
+                            <span className="font-bold text-gray-700">Total</span>
+                            <span className="font-black text-gray-900 text-2xl">₹{cartTotal + 500}</span>
                         </div>
                     </div>
                 </div>

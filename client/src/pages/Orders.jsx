@@ -97,7 +97,7 @@ const Orders = () => {
                 }
             }
             
-            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + 500;
             return { ...prev, items: newItems, totalAmount: newTotal };
         });
     };
@@ -113,7 +113,7 @@ const Orders = () => {
                 newItems.push({ name: product.name, price: product.price, qty: 1 });
             }
             
-            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + 500;
             return { ...prev, items: newItems, totalAmount: newTotal };
         });
     };
@@ -332,6 +332,11 @@ const Orders = () => {
                                         <td class="text-right">₹${item.price * item.qty}</td>
                                     </tr>
                                 `).join('')}
+                                <tr>
+                                    <td class="item-name" style="color: #6b7280; font-size: 13px;">Service Fee</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-right" style="color: #6b7280; font-size: 13px;">₹500</td>
+                                </tr>
                             </tbody>
                         </table>
                         
@@ -494,6 +499,10 @@ const Orders = () => {
                                             <span>₹{item.price * item.qty}</span>
                                         </div>
                                     ))}
+                                    <div className="flex justify-between text-gray-500 text-sm italic pt-2 border-t border-dashed">
+                                        <span>Service Fee</span>
+                                        <span>₹500</span>
+                                    </div>
                                 </div>
                                 
                                 <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
@@ -569,7 +578,11 @@ const Orders = () => {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                                <div className="mt-6 pt-4 border-t flex justify-between items-center text-gray-500 mb-2">
+                                    <span className="font-medium text-sm">Service Fee</span>
+                                    <span className="font-medium text-sm">₹500</span>
+                                </div>
+                                <div className="pt-2 border-t flex justify-between items-center">
                                     <span className="font-bold text-gray-700">New Total</span>
                                     <span className="font-bold text-2xl">₹{editingOrder.totalAmount}</span>
                                 </div>

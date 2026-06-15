@@ -1,10 +1,10 @@
 import { useCart } from '../context/CartContext';
-import { X, ShoppingBag } from 'lucide-react';
+import { X, ShoppingBag, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import CartItem from './CartItem';
 
 const CartDrawer = () => {
-    const { isCartOpen, setIsCartOpen, cartItems, cartTotal } = useCart();
+    const { isCartOpen, setIsCartOpen, cartItems, cartTotal, clearCart } = useCart();
 
     if (!isCartOpen) return null;
 
@@ -41,6 +41,15 @@ const CartDrawer = () => {
                         </div>
                     ) : (
                         <div className="space-y-6">
+                            <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-50">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Items</span>
+                                <button 
+                                    onClick={clearCart} 
+                                    className="text-red-500 hover:text-red-600 text-sm font-bold flex items-center gap-1 transition-colors bg-red-50 px-3 py-1.5 rounded-lg"
+                                >
+                                    <Trash2 size={14} /> Clear Cart
+                                </button>
+                            </div>
                             {cartItems.map((item) => (
                                 <CartItem key={item._id} item={item} />
                             ))}

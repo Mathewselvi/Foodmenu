@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Restaurant = require('../models/Restaurant');
+const { protect } = require('../middleware/authMiddleware');
 
 // Get all restaurants
 router.get('/', async (req, res) => {
@@ -12,8 +13,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Create a new restaurant
-router.post('/', async (req, res) => {
+// Create a new restaurant (Private)
+router.post('/', protect, async (req, res) => {
     try {
         const { name } = req.body;
         const restaurant = new Restaurant({ name });
@@ -24,8 +25,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Update a restaurant
-router.put('/:id', async (req, res) => {
+// Update a restaurant (Private)
+router.put('/:id', protect, async (req, res) => {
     try {
         const { name, isActive } = req.body;
         const restaurant = await Restaurant.findById(req.params.id);
@@ -46,8 +47,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Delete a restaurant
-router.delete('/:id', async (req, res) => {
+// Delete a restaurant (Private)
+router.delete('/:id', protect, async (req, res) => {
     try {
         const restaurant = await Restaurant.findById(req.params.id);
 

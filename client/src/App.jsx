@@ -9,6 +9,7 @@ import { CartProvider } from './context/CartContext';
 import { RestaurantProvider } from './context/RestaurantContext';
 import { NotificationProvider } from './context/NotificationContext';
 import ScrollToTop from './components/ScrollToTop';
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -22,9 +23,9 @@ function App() {
             <CartDrawer />
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/checkout" element={<Checkout />} />
-              <Route path="/orders" element={<Orders />} />
+              <Route path="/orders" element={<AdminRoute><Orders /></AdminRoute>} />
             </Routes>
           </div>
         </Router>

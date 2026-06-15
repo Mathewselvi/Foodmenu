@@ -14,6 +14,15 @@ const Orders = () => {
     const [products, setProducts] = useState([]);
     const [editSearchQuery, setEditSearchQuery] = useState('');
 
+    const authHeaders = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+    };
+
+    const authHeaderOnly = {
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+    };
+
     const filteredEditProducts = useMemo(() => {
         if (!editSearchQuery.trim()) return products;
         const query = editSearchQuery.toLowerCase();
@@ -44,7 +53,9 @@ const Orders = () => {
         }
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/orders?restaurantId=${selectedRestaurant._id}`);
+            const res = await fetch(`${API_URL}/orders?restaurantId=${selectedRestaurant._id}`, {
+                headers: authHeaderOnly
+            });
             if (!res.ok) throw new Error('Fetch failed');
             const data = await res.json();
             setOrders(data);
@@ -69,7 +80,7 @@ const Orders = () => {
         try {
             const res = await fetch(`${API_URL}/orders/${editingOrder._id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify({
                     items: editingOrder.items,
                     totalAmount: editingOrder.totalAmount
@@ -122,7 +133,7 @@ const Orders = () => {
         try {
             const res = await fetch(`${API_URL}/orders/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify({ status })
             });
             if (!res.ok) throw new Error('Update failed');
@@ -134,11 +145,27 @@ const Orders = () => {
         }
     };
 
+    const markPaymentReceived = async (id) => {
+        try {
+            const res = await fetch(`${API_URL}/orders/${id}/payment`, {
+                method: 'PUT',
+                headers: authHeaderOnly
+            });
+            if (!res.ok) throw new Error('Update failed');
+            showNotification('Payment marked as received and email sent!');
+            fetchOrders();
+        } catch (error) {
+            console.error(error);
+            showNotification('Failed to update payment status', 'error');
+        }
+    };
+
     const deleteOrder = async (id) => {
         if (window.confirm('Are you sure you want to delete this order records?')) {
             try {
                 const res = await fetch(`${API_URL}/orders/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: authHeaderOnly
                 });
                 if (!res.ok) throw new Error('Delete failed');
                 showNotification('Order record deleted');
@@ -430,14 +457,20 @@ const Orders = () => {
                             <div key={order._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-gray-50 pb-4">
                                     <div>
-                                        <div className="flex items-center gap-3 mb-1">
+                                        <div className="flex flex-wrap items-center gap-3 mb-2">
                                             <span className="font-extrabold text-lg text-gray-900">Guest: {order.guestName}</span>
+                                            {order.email && <span className="text-sm font-medium text-gray-500">({order.email})</span>}
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                                                 order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                                                 order.status === 'Completed' ? 'bg-green-100 text-green-700' :
                                                 'bg-red-100 text-red-700'
                                             }`}>
-                                                {order.status}
+                                                Status: {order.status}
+                                            </span>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                order.paymentStatus === 'Received' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
+                                            }`}>
+                                                Payment: {order.paymentStatus || 'Pending'}
                                             </span>
                                         </div>
                                         <div className="text-xs text-gray-400 flex items-center gap-1">
@@ -453,6 +486,16 @@ const Orders = () => {
                                             >
                                                 <Printer size={16} /> Print Bill
                                             </button>
+                                            
+                                            {order.paymentStatus !== 'Received' && (
+                                                <button 
+                                                    onClick={() => markPaymentReceived(order._id)}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold shadow-sm"
+                                                >
+                                                    Mark Payment Received
+                                                </button>
+                                            )}
+
                                             <button 
                                                 onClick={() => updateStatus(order._id, 'Completed')}
                                                 className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold shadow-sm"

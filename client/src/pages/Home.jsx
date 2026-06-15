@@ -15,6 +15,21 @@ const Home = () => {
     const { selectedRestaurant, restaurants, changeRestaurant } = useRestaurant();
 
     useEffect(() => {
+        if (restaurants.length > 0) {
+            const activeRestaurants = restaurants.filter(r => r.isActive !== false);
+            
+            if (selectedRestaurant) {
+                const currentInList = restaurants.find(r => r._id === selectedRestaurant._id);
+                if (currentInList && currentInList.isActive === false) {
+                    changeRestaurant(null);
+                }
+            } else if (activeRestaurants.length === 1) {
+                changeRestaurant(activeRestaurants[0]);
+            }
+        }
+    }, [selectedRestaurant, restaurants, changeRestaurant]);
+
+    useEffect(() => {
         const fetchProducts = async () => {
             if (!selectedRestaurant) return;
             try {
@@ -56,6 +71,8 @@ const Home = () => {
     }, [activeCategory, products, searchQuery]);
 
     if (!selectedRestaurant) {
+        const activeRestaurants = restaurants.filter(r => r.isActive !== false);
+
         return (
             <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
@@ -68,15 +85,19 @@ const Home = () => {
                         </p>
                     </div>
                     <div className="mt-8 space-y-4">
-                        {restaurants.map((restaurant) => (
-                            <button
-                                key={restaurant._id}
-                                onClick={() => changeRestaurant(restaurant)}
-                                className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-md hover:shadow-lg"
-                            >
-                                {restaurant.name}
-                            </button>
-                        ))}
+                        {activeRestaurants.length === 0 ? (
+                            <p className="text-center text-gray-500">No restaurants are currently available.</p>
+                        ) : (
+                            activeRestaurants.map((restaurant) => (
+                                <button
+                                    key={restaurant._id}
+                                    onClick={() => changeRestaurant(restaurant)}
+                                    className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-md hover:shadow-lg"
+                                >
+                                    {restaurant.name}
+                                </button>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
@@ -89,12 +110,6 @@ const Home = () => {
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <div className="flex items-center gap-4">
                         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{selectedRestaurant.name} Menu</h2>
-                        <button 
-                            onClick={() => changeRestaurant(null)}
-                            className="text-sm text-green-600 hover:text-green-800 underline"
-                        >
-                            Change Restaurant
-                        </button>
                     </div>
                     
                     <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">

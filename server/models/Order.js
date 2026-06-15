@@ -6,6 +6,10 @@ const orderSchema = mongoose.Schema(
             type: String,
             default: 'Guest'
         },
+        email: {
+            type: String,
+            required: true
+        },
         items: [
             {
                 name: { type: String, required: true },
@@ -20,6 +24,11 @@ const orderSchema = mongoose.Schema(
         status: {
             type: String,
             enum: ['Pending', 'Completed', 'Cancelled'],
+            default: 'Pending',
+        },
+        paymentStatus: {
+            type: String,
+            enum: ['Pending', 'Received'],
             default: 'Pending',
         },
         restaurant: {

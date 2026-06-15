@@ -1,5 +1,6 @@
 const express = require('express');
 const Product = require('../models/Product');
+const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // @desc    Fetch all products
@@ -20,8 +21,8 @@ router.get('/', async (req, res) => {
 
 // @desc    Create a product
 // @route   POST /api/products
-// @access  Public (for MVP admin)
-router.post('/', async (req, res) => {
+// @access  Private (Admin only)
+router.post('/', protect, async (req, res) => {
     try {
         const { name, price, category, isAvailable, restaurant } = req.body;
         const product = new Product({
@@ -40,8 +41,8 @@ router.post('/', async (req, res) => {
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
-// @access  Public (for MVP admin)
-router.put('/:id', async (req, res) => {
+// @access  Private (Admin only)
+router.put('/:id', protect, async (req, res) => {
     try {
         const { name, price, category, isAvailable, restaurant } = req.body;
         const product = await Product.findById(req.params.id);
@@ -65,8 +66,8 @@ router.put('/:id', async (req, res) => {
 
 // @desc    Delete a product
 // @route   DELETE /api/products/:id
-// @access  Public (for MVP admin)
-router.delete('/:id', async (req, res) => {
+// @access  Private (Admin only)
+router.delete('/:id', protect, async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (product) {

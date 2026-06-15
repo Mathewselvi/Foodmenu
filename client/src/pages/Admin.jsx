@@ -18,6 +18,12 @@ const Admin = () => {
     const [selectedIds, setSelectedIds] = useState([]);
     const [bulkCategory, setBulkCategory] = useState('');
 
+    const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
+    const authHeaders = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+    };
+
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) return products;
         const query = searchQuery.toLowerCase();
@@ -87,7 +93,7 @@ const Admin = () => {
 
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify(payload)
             });
 
@@ -112,7 +118,10 @@ const Admin = () => {
     const handleDelete = async (id) => {
         if(window.confirm('Are you sure you want to delete this item?')) {
             try {
-                const res = await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/products/${id}`, { 
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+                });
                 if (!res.ok) throw new Error('Delete failed');
                 showNotification('Item removed from menu');
                 fetchProducts();
@@ -127,7 +136,7 @@ const Admin = () => {
         try {
             const res = await fetch(`${API_URL}/products/${product._id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify({ ...product, isAvailable: !product.isAvailable })
             });
             if (!res.ok) throw new Error('Update failed');
@@ -149,7 +158,7 @@ const Admin = () => {
 
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify(restaurantFormData)
             });
 
@@ -170,10 +179,30 @@ const Admin = () => {
         setRestaurantEditId(restaurant._id);
     };
 
+    const toggleRestaurantStatus = async (restaurant) => {
+        try {
+            const currentStatus = restaurant.isActive !== false;
+            const res = await fetch(`${API_URL}/restaurants/${restaurant._id}`, {
+                method: 'PUT',
+                headers: authHeaders,
+                body: JSON.stringify({ isActive: !currentStatus })
+            });
+            if (!res.ok) throw new Error('Update failed');
+            showNotification(currentStatus ? 'Restaurant Disabled' : 'Restaurant Enabled');
+            fetchRestaurants();
+        } catch (error) {
+            console.error(error);
+            showNotification('Failed to update status', 'error');
+        }
+    };
+
     const handleRestaurantDelete = async (id) => {
         if(window.confirm('Are you sure you want to delete this restaurant? This might orphan some products/orders.')) {
             try {
-                const res = await fetch(`${API_URL}/restaurants/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/restaurants/${id}`, { 
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+                });
                 if (!res.ok) throw new Error('Delete failed');
                 showNotification('Restaurant removed');
                 if (selectedRestaurant && selectedRestaurant._id === id) {
@@ -207,7 +236,10 @@ const Admin = () => {
         if (selectedIds.length === 0) return;
         if (window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`)) {
             try {
-                await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, { method: 'DELETE' })));
+                await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, { 
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+                })));
                 showNotification(`${selectedIds.length} items deleted successfully`);
                 setSelectedIds([]);
                 fetchProducts();
@@ -223,7 +255,7 @@ const Admin = () => {
         try {
             await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify({ isAvailable })
             })));
             showNotification(`${selectedIds.length} items marked as ${isAvailable ? 'Available' : 'Sold Out'}`);
@@ -240,7 +272,7 @@ const Admin = () => {
         try {
             await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders,
                 body: JSON.stringify({ category: bulkCategory })
             })));
             showNotification(`${selectedIds.length} items moved to ${bulkCategory}`);
@@ -253,9 +285,61 @@ const Admin = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('adminToken');
+        window.location.reload();
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${API_URL}/admin/change-password`, {
+                method: 'PUT',
+                headers: authHeaders,
+                body: JSON.stringify(passwordData)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showNotification('Password updated successfully!');
+                setPasswordData({ currentPassword: '', newPassword: '' });
+            } else {
+                showNotification(data.message || 'Failed to update password', 'error');
+            }
+        } catch (error) {
+            showNotification('Server error', 'error');
+        }
+    };
+
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8 text-gray-900 border-b pb-4">Admin Dashboard</h1>
+            <div className="flex justify-between items-center mb-8 border-b pb-4">
+                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                <button onClick={handleLogout} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                    Logout
+                </button>
+            </div>
+
+            {/* Password Change */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
+                <h2 className="text-xl font-bold mb-4">Change Admin Password</h2>
+                <form onSubmit={handleChangePassword} className="flex flex-col sm:flex-row gap-4 mb-2">
+                    <input 
+                        type="password" name="currentPassword" value={passwordData.currentPassword} 
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} 
+                        placeholder="Current Password" required 
+                        className="flex-1 px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full" 
+                    />
+                    <input 
+                        type="password" name="newPassword" value={passwordData.newPassword} 
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} 
+                        placeholder="New Password" required 
+                        className="flex-1 px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full" 
+                    />
+                    <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-700">
+                        Update Password
+                    </button>
+                </form>
+            </div>
 
             {/* Restaurant Management */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
@@ -278,8 +362,11 @@ const Admin = () => {
 
                 <div className="flex flex-wrap gap-2">
                     {restaurants.map((restaurant) => (
-                        <div key={restaurant._id} className="flex items-center gap-2 bg-gray-50 border px-4 py-2 rounded-lg">
-                            <span className="font-medium">{restaurant.name}</span>
+                        <div key={restaurant._id} className={`flex items-center gap-2 border px-4 py-2 rounded-lg ${restaurant.isActive !== false ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                            <span className={`font-medium ${restaurant.isActive !== false ? 'text-green-800' : 'text-gray-500 line-through'}`}>{restaurant.name}</span>
+                            <button onClick={() => toggleRestaurantStatus(restaurant)} className={`text-xs px-2 py-1 rounded font-bold ${restaurant.isActive !== false ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'} ml-2`}>
+                                {restaurant.isActive !== false ? 'Disable' : 'Enable'}
+                            </button>
                             <button onClick={() => handleRestaurantEdit(restaurant)} className="text-blue-600 hover:text-blue-800 ml-2">
                                 <Edit size={14} />
                             </button>

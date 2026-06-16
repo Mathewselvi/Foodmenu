@@ -34,6 +34,17 @@ app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
+// Diagnostic route
+app.get('/api/test-env', (req, res) => {
+    res.json({
+        hasSmtpUser: !!process.env.SMTP_USER,
+        smtpUserVal: process.env.SMTP_USER,
+        hasSmtpPass: !!process.env.SMTP_PASS,
+        smtpPassLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
+        mongoUriPrefix: process.env.MONGO_URI ? process.env.MONGO_URI.substring(0, 15) : null
+    });
+});
+
 const PORT = process.env.PORT || 5001;
 
 if (process.env.NODE_ENV !== 'production') {

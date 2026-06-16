@@ -10,6 +10,14 @@ const restaurantSchema = mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        serviceChargeEnabled: {
+            type: Boolean,
+            default: true,
+        },
+        serviceChargeAmount: {
+            type: Number,
+            default: 500,
+        },
     },
     {
         timestamps: true,

@@ -88,14 +88,16 @@ const generateBillPDF = (order) => {
                 y += 35;
             });
 
-            // Service Fee Row
-            doc.fillColor(lightColor).text('Service Fee / Delivery', 60, y);
-            doc.text('-', 350, y, { width: 40, align: 'center' });
-            doc.text('-', 400, y, { width: 60, align: 'right' });
-            doc.text('Rs. 500', 470, y, { width: 65, align: 'right' });
-            
-            doc.moveTo(50, y + 20).lineTo(545, y + 20).lineWidth(0.5).strokeColor('#e5e7eb').stroke();
-            y += 40;
+            // Service Fee Row (dynamic)
+            if (order.serviceCharge && order.serviceCharge > 0) {
+                doc.fillColor(lightColor).text('Service Fee / Delivery', 60, y);
+                doc.text('-', 350, y, { width: 40, align: 'center' });
+                doc.text('-', 400, y, { width: 60, align: 'right' });
+                doc.text(`Rs. ${order.serviceCharge}`, 470, y, { width: 65, align: 'right' });
+                
+                doc.moveTo(50, y + 20).lineTo(545, y + 20).lineWidth(0.5).strokeColor('#e5e7eb').stroke();
+                y += 40;
+            }
 
             // --- TOTALS SECTION ---
             // Draw shaded box for totals

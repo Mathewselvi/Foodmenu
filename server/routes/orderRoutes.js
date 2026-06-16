@@ -10,7 +10,7 @@ const router = express.Router();
 // @access  Public
 router.post('/', async (req, res) => {
     try {
-        const { guestName, email, items, totalAmount, restaurant } = req.body;
+        const { guestName, email, items, totalAmount, restaurant, serviceCharge } = req.body;
 
         if (items && items.length === 0) {
             return res.status(400).json({ message: 'No order items' });
@@ -20,7 +20,8 @@ router.post('/', async (req, res) => {
                 email,
                 items,
                 totalAmount,
-                restaurant
+                restaurant,
+                serviceCharge
             });
 
             const createdOrder = await order.save();
@@ -39,6 +40,23 @@ router.post('/', async (req, res) => {
                 subject: 'Order Placed Successfully - Resort Beyond Heaven',
                 html: emailHtml
             });
+
+            // Send notification email to admin
+            const adminHtml = `
+                <h2>New Order Received!</h2>
+                <p><strong>Guest Name:</strong> ${order.guestName}</p>
+                <p><strong>Guest Email:</strong> ${order.email}</p>
+                <p><strong>Total Amount:</strong> ₹${order.totalAmount} (Service Charge: ₹${order.serviceCharge || 0})</p>
+                <br/>
+                <p>Please log in to the admin dashboard to manage this order.</p>
+            `;
+            if (process.env.SMTP_USER) {
+                await sendEmail({
+                    to: process.env.SMTP_USER,
+                    subject: '🚨 New Order Received - Resort Beyond Heaven',
+                    html: adminHtml
+                });
+            }
 
             res.status(201).json(createdOrder);
         }

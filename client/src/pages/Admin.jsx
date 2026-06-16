@@ -13,6 +13,7 @@ const Admin = () => {
     });
     const [restaurantFormData, setRestaurantFormData] = useState({ name: '' });
     const [restaurantEditId, setRestaurantEditId] = useState(null);
+    const [serviceChargeData, setServiceChargeData] = useState({ enabled: true, amount: 500 });
     const [editId, setEditId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
@@ -74,6 +75,12 @@ const Admin = () => {
 
     useEffect(() => {
         fetchProducts();
+        if (selectedRestaurant) {
+            setServiceChargeData({
+                enabled: selectedRestaurant.serviceChargeEnabled !== false,
+                amount: selectedRestaurant.serviceChargeAmount !== undefined ? selectedRestaurant.serviceChargeAmount : 500
+            });
+        }
     }, [selectedRestaurant]);
 
     const handleChange = (e) => {
@@ -213,6 +220,29 @@ const Admin = () => {
                 console.error(error);
                 showNotification('Could not delete restaurant', 'error');
             }
+        }
+    };
+
+    const handleServiceChargeSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedRestaurant) return;
+        try {
+            const res = await fetch(`${API_URL}/restaurants/${selectedRestaurant._id}`, {
+                method: 'PUT',
+                headers: authHeaders,
+                body: JSON.stringify({ 
+                    serviceChargeEnabled: serviceChargeData.enabled,
+                    serviceChargeAmount: serviceChargeData.amount
+                })
+            });
+            if (!res.ok) throw new Error('Failed to update service charge');
+            const updatedRestaurant = await res.json();
+            showNotification('Service charge updated successfully!');
+            fetchRestaurants();
+            changeRestaurant(updatedRestaurant);
+        } catch (error) {
+            console.error(error);
+            showNotification('Error updating service charge', 'error');
         }
     };
 
@@ -398,6 +428,38 @@ const Admin = () => {
 
             {selectedRestaurant && (
                 <>
+                
+            {/* Service Charge Settings */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100 mb-10">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">Service Charge for {selectedRestaurant.name}</h2>
+                <form onSubmit={handleServiceChargeSubmit} className="flex flex-col sm:flex-row items-end gap-4">
+                    <div className="flex flex-col gap-2 flex-1">
+                        <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
+                            <input 
+                                type="checkbox" id="serviceChargeEnabled"
+                                checked={serviceChargeData.enabled} 
+                                onChange={(e) => setServiceChargeData({ ...serviceChargeData, enabled: e.target.checked })}
+                                className="w-5 h-5 text-orange-600 rounded"
+                            />
+                            <label htmlFor="serviceChargeEnabled" className="text-sm font-bold text-gray-700">Enable Service Charge / Delivery Fee</label>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-1">
+                        <label className="text-sm font-bold text-gray-700">Amount (₹)</label>
+                        <input 
+                            type="number" 
+                            value={serviceChargeData.amount} 
+                            onChange={(e) => setServiceChargeData({ ...serviceChargeData, amount: Number(e.target.value) })} 
+                            placeholder="e.g. 500" 
+                            disabled={!serviceChargeData.enabled}
+                            className="px-4 py-3 border rounded-lg focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400" 
+                        />
+                    </div>
+                    <button type="submit" className="bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 h-[50px]">
+                        Save Settings
+                    </button>
+                </form>
+            </div>
             
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
                 <h2 className="text-xl font-bold mb-4">{editId ? 'Edit Item' : 'Add New Item'}</h2>

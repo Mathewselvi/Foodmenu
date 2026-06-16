@@ -16,6 +16,12 @@ const Checkout = () => {
     const { showNotification } = useNotification();
     const { selectedRestaurant } = useRestaurant();
 
+    // Calculate dynamic service charge
+    const serviceCharge = selectedRestaurant 
+        ? (selectedRestaurant.serviceChargeEnabled !== false ? (selectedRestaurant.serviceChargeAmount ?? 500) : 0)
+        : 500;
+
+
     useEffect(() => {
         window.scrollTo(0, 0);
         if (cartItems.length === 0 && checkoutStep !== 3) {
@@ -40,8 +46,9 @@ const Checkout = () => {
                 qty: item.qty,
                 price: item.price
             })),
-            totalAmount: cartTotal + 500,
-            restaurant: selectedRestaurant?._id
+            totalAmount: cartTotal + serviceCharge,
+            restaurant: selectedRestaurant?._id,
+            serviceCharge: serviceCharge
         };
 
         try {
@@ -85,7 +92,7 @@ const Checkout = () => {
             <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-center animate-fade-in-up">
                 <h1 className="text-3xl font-extrabold text-gray-900 mb-6">Complete Your Payment</h1>
                 <p className="text-lg text-gray-600 mb-8 max-w-md">
-                    Please scan the QR code below or use the Google Pay number to make your payment of <strong className="text-green-700 font-black text-xl">₹{cartTotal + 500}</strong>.
+                    Please scan the QR code below or use the Google Pay number to make your payment of <strong className="text-green-700 font-black text-xl">₹{cartTotal + serviceCharge}</strong>.
                 </p>
                 
                 <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-sm w-full mb-8">
@@ -162,13 +169,15 @@ const Checkout = () => {
                             <span>Subtotal</span>
                             <span className="font-semibold text-gray-800">₹{cartTotal}</span>
                         </div>
-                        <div className="flex justify-between items-center text-gray-600 pb-2">
-                            <span>Service Fee</span>
-                            <span className="font-semibold text-gray-800">₹500</span>
-                        </div>
+                        {serviceCharge > 0 && (
+                            <div className="flex justify-between items-center text-gray-600 pb-2">
+                                <span>Service Fee</span>
+                                <span className="font-semibold text-gray-800">₹{serviceCharge}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center text-lg pt-3 border-t border-gray-100">
                             <span className="font-bold text-gray-700">Total</span>
-                            <span className="font-black text-gray-900 text-2xl">₹{cartTotal + 500}</span>
+                            <span className="font-black text-gray-900 text-2xl">₹{cartTotal + serviceCharge}</span>
                         </div>
                     </div>
                 </div>

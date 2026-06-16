@@ -28,13 +28,19 @@ router.post('/', protect, async (req, res) => {
 // Update a restaurant (Private)
 router.put('/:id', protect, async (req, res) => {
     try {
-        const { name, isActive } = req.body;
+        const { name, isActive, serviceChargeEnabled, serviceChargeAmount } = req.body;
         const restaurant = await Restaurant.findById(req.params.id);
 
         if (restaurant) {
             restaurant.name = name || restaurant.name;
             if (isActive !== undefined) {
                 restaurant.isActive = isActive;
+            }
+            if (serviceChargeEnabled !== undefined) {
+                restaurant.serviceChargeEnabled = serviceChargeEnabled;
+            }
+            if (serviceChargeAmount !== undefined) {
+                restaurant.serviceChargeAmount = serviceChargeAmount;
             }
 
             const updatedRestaurant = await restaurant.save();

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon, ClipboardList } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon, ClipboardList, Home } from 'lucide-react';
 import API_URL from '../api';
 import Orders from './Orders';
 
@@ -352,16 +353,23 @@ const Admin = () => {
             {/* Sidebar Navigation */}
             <aside className={`fixed inset-y-0 left-0 bg-white border-r border-gray-200 z-50 w-64 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="text-xl font-black text-green-700 tracking-tight flex items-center gap-2">
-                        <span className="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm">B</span> 
-                        Beyond <span className="text-gray-800">Heaven</span>
-                    </h2>
+                    <div className="flex flex-col">
+                        <h2 className="text-xl font-black text-green-700 tracking-tight flex items-center gap-2">
+                            <span className="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm">B</span> 
+                            Beyond <span className="text-gray-800">Heaven</span>
+                        </h2>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1 ml-10">FoodMenu Dashboard</span>
+                    </div>
                     <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-gray-400 hover:text-gray-600">
                         <X size={20} />
                     </button>
                 </div>
                 <nav className="flex-1 px-4 py-6 space-y-1">
-                    <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Dashboard</p>
+                    <Link to="/" className="w-full flex items-center gap-3 px-3 py-2.5 mb-4 rounded-lg font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <Home size={18} className="text-blue-600" /> Go to Live Menu
+                    </Link>
+                    
+                    <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 mt-2">Dashboard</p>
                     {tabs.map(tab => (
                         <button
                             key={tab.id}

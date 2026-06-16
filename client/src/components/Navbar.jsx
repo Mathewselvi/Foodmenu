@@ -1,9 +1,14 @@
 import { ShoppingBag, Menu, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
     const { totalItems, setIsCartOpen } = useCart();
+    const location = useLocation();
+
+    if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/orders')) {
+        return null;
+    }
 
     return (
         <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-green-100 shadow-sm">

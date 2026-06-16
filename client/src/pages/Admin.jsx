@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon } from 'lucide-react';
+import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon, ClipboardList } from 'lucide-react';
 import API_URL from '../api';
+import Orders from './Orders';
 
 const Admin = () => {
     const { showNotification } = useNotification();
@@ -20,7 +21,7 @@ const Admin = () => {
     const [bulkCategory, setBulkCategory] = useState('');
     
     // Dashboard States
-    const [activeTab, setActiveTab] = useState('menu');
+    const [activeTab, setActiveTab] = useState('orders');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
@@ -339,6 +340,7 @@ const Admin = () => {
     };
 
     const tabs = [
+        { id: 'orders', name: 'Live Orders', icon: ClipboardList },
         { id: 'menu', name: 'Menu Items', icon: Utensils },
         { id: 'settings', name: 'Restaurant Settings', icon: Settings },
         { id: 'security', name: 'Security', icon: Shield }
@@ -409,12 +411,19 @@ const Admin = () => {
                 </header>
 
                 {/* Content Area */}
-                <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50">
-                    <div className="max-w-6xl mx-auto pb-24">
+                <main className="flex-1 overflow-y-auto bg-gray-50">
+                    <div className="w-full h-full">
                         
+                        {/* TAB 0: ORDERS */}
+                        {activeTab === 'orders' && (
+                            <div className="animate-fade-in-up h-full">
+                                <Orders isEmbedded={true} />
+                            </div>
+                        )}
+
                         {/* TAB 1: MENU MANAGEMENT */}
                         {activeTab === 'menu' && (
-                            <div className="animate-fade-in-up">
+                            <div className="animate-fade-in-up p-4 sm:p-8 max-w-6xl mx-auto pb-24">
                                 {!selectedRestaurant ? (
                                     <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
                                         <Utensils className="mx-auto h-16 w-16 text-gray-300 mb-4" />
@@ -566,7 +575,7 @@ const Admin = () => {
 
                         {/* TAB 2: SETTINGS */}
                         {activeTab === 'settings' && (
-                            <div className="animate-fade-in-up max-w-4xl">
+                            <div className="animate-fade-in-up max-w-4xl p-4 sm:p-8 mx-auto pb-24">
                                 
                                 <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
                                     <h2 className="text-xl font-bold mb-6 text-gray-800">Add / Edit Hotel Property</h2>
@@ -651,7 +660,7 @@ const Admin = () => {
 
                         {/* TAB 3: SECURITY */}
                         {activeTab === 'security' && (
-                            <div className="animate-fade-in-up max-w-2xl">
+                            <div className="animate-fade-in-up max-w-2xl p-4 sm:p-8 mx-auto pb-24">
                                 <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
                                     <div className="flex items-center gap-3 mb-6">
                                         <div className="p-3 bg-red-50 rounded-xl text-red-500">

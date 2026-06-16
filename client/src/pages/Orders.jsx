@@ -5,7 +5,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import API_URL from '../api';
 
-const Orders = () => {
+const Orders = ({ isEmbedded = false }) => {
     const { showNotification } = useNotification();
     const { selectedRestaurant, restaurants, changeRestaurant } = useRestaurant();
     const [orders, setOrders] = useState([]);
@@ -410,38 +410,42 @@ const Orders = () => {
     }, [orders]);
 
     return (
-        <div className="max-w-6xl mx-auto px-4 py-8">
-            <div className="mb-6">
-                <Link to="/" className="inline-flex items-center gap-2 text-green-700 font-medium hover:underline">
-                    <ArrowLeft size={18} /> Back to Menu
-                </Link>
-            </div>
+        <div className={isEmbedded ? "w-full" : "max-w-6xl mx-auto px-4 py-8"}>
+            {!isEmbedded && (
+                <>
+                    <div className="mb-6">
+                        <Link to="/" className="inline-flex items-center gap-2 text-green-700 font-medium hover:underline">
+                            <ArrowLeft size={18} /> Back to Menu
+                        </Link>
+                    </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-4">
-                <h1 className="text-3xl font-bold text-gray-900">Orders Dashboard</h1>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full md:w-auto">
-                    <label className="font-bold text-gray-700 whitespace-nowrap">Viewing Orders For:</label>
-                    <select 
-                        value={selectedRestaurant?._id || ''} 
-                        onChange={(e) => {
-                            const rest = restaurants.find(r => r._id === e.target.value);
-                            changeRestaurant(rest);
-                        }}
-                        className="px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full sm:min-w-[250px]"
-                    >
-                        <option value="" disabled>Select a restaurant</option>
-                        {restaurants.map(r => (
-                            <option key={r._id} value={r._id}>{r.name}</option>
-                        ))}
-                    </select>
-                </div>
-            </div>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-4">
+                        <h1 className="text-3xl font-bold text-gray-900">Orders Dashboard</h1>
+                        
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full md:w-auto">
+                            <label className="font-bold text-gray-700 whitespace-nowrap">Viewing Orders For:</label>
+                            <select 
+                                value={selectedRestaurant?._id || ''} 
+                                onChange={(e) => {
+                                    const rest = restaurants.find(r => r._id === e.target.value);
+                                    changeRestaurant(rest);
+                                }}
+                                className="px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full sm:min-w-[250px]"
+                            >
+                                <option value="" disabled>Select a restaurant</option>
+                                {restaurants.map(r => (
+                                    <option key={r._id} value={r._id}>{r.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {!selectedRestaurant ? (
-                <div className="text-center py-20 text-gray-500">Please select a restaurant to view its orders.</div>
+                <div className="text-center py-20 text-gray-500">Please select a hotel from the top dropdown to view its orders.</div>
             ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
                 
                 {/* Orders List */}
                 <div className="lg:col-span-2 space-y-6">

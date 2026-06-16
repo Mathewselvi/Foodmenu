@@ -434,7 +434,7 @@ const Orders = ({ isEmbedded = false }) => {
                                         <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-500 font-semibold text-xs uppercase tracking-wider sticky top-0 z-10">
                                             <tr>
                                                 <th className="px-6 py-4">Order Details</th>
-                                                <th className="px-6 py-4">Items</th>
+                                                <th className="px-6 py-4">Ordered Items</th>
                                                 <th className="px-6 py-4">Amount</th>
                                                 <th className="px-6 py-4">Status</th>
                                                 <th className="px-6 py-4 text-right">Actions</th>
@@ -451,10 +451,14 @@ const Orders = ({ isEmbedded = false }) => {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-medium text-gray-900">{order.items.reduce((sum, i) => sum + i.qty, 0)}</span>
-                                                            <span className="text-gray-500">items</span>
+                                                    <td className="px-6 py-4 align-top">
+                                                        <div className="flex flex-col gap-1.5 max-w-[200px] whitespace-normal">
+                                                            {order.items.map((item, idx) => (
+                                                                <div key={idx} className="flex items-start text-sm">
+                                                                    <span className="font-bold text-gray-900 mr-2 min-w-[24px]">{item.qty}x</span>
+                                                                    <span className="text-gray-600 leading-tight">{item.name}</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">

@@ -350,30 +350,32 @@ const Admin = () => {
         <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
             
             {/* Sidebar Navigation */}
-            <aside className={`fixed inset-y-0 left-0 bg-white shadow-xl z-50 w-64 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 bg-white border-r border-gray-200 z-50 w-64 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="text-xl font-black text-green-800 tracking-tight flex items-center gap-2">
-                        <span>Beyond</span> Heaven
+                    <h2 className="text-xl font-black text-green-700 tracking-tight flex items-center gap-2">
+                        <span className="bg-green-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm">B</span> 
+                        Beyond <span className="text-gray-800">Heaven</span>
                     </h2>
                     <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-gray-400 hover:text-gray-600">
                         <X size={20} />
                     </button>
                 </div>
-                <nav className="flex-1 px-4 py-6 space-y-2">
+                <nav className="flex-1 px-4 py-6 space-y-1">
+                    <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Dashboard</p>
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === tab.id ? 'bg-green-600 text-white shadow-md shadow-green-600/20' : 'text-gray-600 hover:bg-gray-50 hover:text-green-700'}`}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all ${activeTab === tab.id ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                         >
-                            <tab.icon size={18} />
+                            <tab.icon size={18} className={activeTab === tab.id ? 'text-green-600' : 'text-gray-400'} />
                             {tab.name}
                         </button>
                     ))}
                 </nav>
                 <div className="p-4 border-t border-gray-100">
-                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl font-bold hover:bg-red-100 transition-colors">
-                        <LogOut size={18} /> Logout
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <LogOut size={18} className="text-gray-400" /> Logout
                     </button>
                 </div>
             </aside>
@@ -382,31 +384,36 @@ const Admin = () => {
             <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
                 
                 {/* Header Navbar */}
-                <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4 sm:px-8 z-10 shrink-0 shadow-sm">
+                <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 z-10 shrink-0">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-600 hover:text-green-700">
-                            <MenuIcon size={24} />
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-500 hover:text-gray-900">
+                            <MenuIcon size={20} />
                         </button>
-                        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
+                        <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
                             {tabs.find(t => t.id === activeTab)?.name}
                         </h1>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-gray-500 hidden md:block">Managing Menu For:</span>
-                        <select 
-                            value={selectedRestaurant?._id || ''} 
-                            onChange={(e) => {
-                                const rest = restaurants.find(r => r._id === e.target.value);
-                                changeRestaurant(rest);
-                            }}
-                            className="px-4 py-2 bg-green-50 text-green-800 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-bold text-sm min-w-[150px] shadow-sm cursor-pointer"
-                        >
-                            <option value="" disabled>Select Hotel</option>
-                            {restaurants.map(r => (
-                                <option key={r._id} value={r._id}>{r.name}</option>
-                            ))}
-                        </select>
+                        <span className="text-sm font-medium text-gray-500 hidden md:block">Managing Menu For:</span>
+                        <div className="relative">
+                            <select 
+                                value={selectedRestaurant?._id || ''} 
+                                onChange={(e) => {
+                                    const rest = restaurants.find(r => r._id === e.target.value);
+                                    changeRestaurant(rest);
+                                }}
+                                className="appearance-none pl-4 pr-10 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none font-medium text-sm text-gray-900 min-w-[160px] shadow-sm cursor-pointer transition-all"
+                            >
+                                <option value="" disabled>Select Hotel</option>
+                                {restaurants.map(r => (
+                                    <option key={r._id} value={r._id}>{r.name}</option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
                     </div>
                 </header>
 

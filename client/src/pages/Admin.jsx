@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import { Search, Plus, Edit, X, Trash2, CheckSquare, Square, Check, ToggleLeft } from 'lucide-react';
+import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon } from 'lucide-react';
 import API_URL from '../api';
 
 const Admin = () => {
@@ -18,6 +18,10 @@ const Admin = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
     const [bulkCategory, setBulkCategory] = useState('');
+    
+    // Dashboard States
+    const [activeTab, setActiveTab] = useState('menu');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
     const authHeaders = {
@@ -35,7 +39,6 @@ const Admin = () => {
     }, [products, searchQuery]);
 
     useEffect(() => {
-        // Clear selections if search changes or products change
         setSelectedIds([]);
     }, [searchQuery, selectedRestaurant]);
 
@@ -91,11 +94,8 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const url = editId 
-                ? `${API_URL}/products/${editId}` 
-                : `${API_URL}/products`;
+            const url = editId ? `${API_URL}/products/${editId}` : `${API_URL}/products`;
             const method = editId ? 'PUT' : 'POST';
-
             const payload = { ...formData, restaurant: selectedRestaurant._id };
 
             const res = await fetch(url, {
@@ -158,9 +158,7 @@ const Admin = () => {
     const handleRestaurantSubmit = async (e) => {
         e.preventDefault();
         try {
-            const url = restaurantEditId 
-                ? `${API_URL}/restaurants/${restaurantEditId}` 
-                : `${API_URL}/restaurants`;
+            const url = restaurantEditId ? `${API_URL}/restaurants/${restaurantEditId}` : `${API_URL}/restaurants`;
             const method = restaurantEditId ? 'PUT' : 'POST';
 
             const res = await fetch(url, {
@@ -340,290 +338,368 @@ const Admin = () => {
         }
     };
 
+    const tabs = [
+        { id: 'menu', name: 'Menu Items', icon: Utensils },
+        { id: 'settings', name: 'Restaurant Settings', icon: Settings },
+        { id: 'security', name: 'Security', icon: Shield }
+    ];
+
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8 border-b pb-4">
-                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                <button onClick={handleLogout} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors">
-                    Logout
-                </button>
-            </div>
-
-            {/* Password Change */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
-                <h2 className="text-xl font-bold mb-4">Change Admin Password</h2>
-                <form onSubmit={handleChangePassword} className="flex flex-col sm:flex-row gap-4 mb-2">
-                    <input 
-                        type="password" name="currentPassword" value={passwordData.currentPassword} 
-                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} 
-                        placeholder="Current Password" required 
-                        className="flex-1 px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full" 
-                    />
-                    <input 
-                        type="password" name="newPassword" value={passwordData.newPassword} 
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} 
-                        placeholder="New Password" required 
-                        className="flex-1 px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full" 
-                    />
-                    <button type="submit" className="bg-orange-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-700">
-                        Update Password
+        <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+            
+            {/* Sidebar Navigation */}
+            <aside className={`fixed inset-y-0 left-0 bg-white shadow-xl z-50 w-64 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <h2 className="text-xl font-black text-green-800 tracking-tight flex items-center gap-2">
+                        <span>Beyond</span> Heaven
+                    </h2>
+                    <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-gray-400 hover:text-gray-600">
+                        <X size={20} />
                     </button>
-                </form>
-            </div>
-
-            {/* Restaurant Management */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
-                <h2 className="text-xl font-bold mb-4">Manage Restaurants</h2>
-                <form onSubmit={handleRestaurantSubmit} className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <input 
-                        name="name" value={restaurantFormData.name} onChange={(e) => setRestaurantFormData({ name: e.target.value })} 
-                        placeholder="Restaurant Name" required 
-                        className="flex-1 px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full" 
-                    />
-                    <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 flex items-center gap-2">
-                        {restaurantEditId ? <><Edit size={16}/> Update</> : <><Plus size={16}/> Add</>}
-                    </button>
-                    {restaurantEditId && (
-                        <button type="button" onClick={() => { setRestaurantEditId(null); setRestaurantFormData({ name: '' })}} className="bg-gray-400 text-white px-6 py-2 rounded-lg font-bold">
-                            Cancel
-                        </button>
-                    )}
-                </form>
-
-                <div className="flex flex-wrap gap-2">
-                    {restaurants.map((restaurant) => (
-                        <div key={restaurant._id} className={`flex items-center gap-2 border px-4 py-2 rounded-lg ${restaurant.isActive !== false ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                            <span className={`font-medium ${restaurant.isActive !== false ? 'text-green-800' : 'text-gray-500 line-through'}`}>{restaurant.name}</span>
-                            <button onClick={() => toggleRestaurantStatus(restaurant)} className={`text-xs px-2 py-1 rounded font-bold ${restaurant.isActive !== false ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-green-100 text-green-600 hover:bg-green-200'} ml-2`}>
-                                {restaurant.isActive !== false ? 'Disable' : 'Enable'}
-                            </button>
-                            <button onClick={() => handleRestaurantEdit(restaurant)} className="text-blue-600 hover:text-blue-800 ml-2">
-                                <Edit size={14} />
-                            </button>
-                            <button onClick={() => handleRestaurantDelete(restaurant._id)} className="text-red-500 hover:text-red-700 ml-1">
-                                <X size={14} />
-                            </button>
-                        </div>
-                    ))}
                 </div>
-            </div>
-
-            {/* Select Restaurant Context */}
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
-                <label className="font-bold text-gray-700">Managing Menu For:</label>
-                <select 
-                    value={selectedRestaurant?._id || ''} 
-                    onChange={(e) => {
-                        const rest = restaurants.find(r => r._id === e.target.value);
-                        changeRestaurant(rest);
-                    }}
-                    className="px-4 py-3 sm:py-2 border rounded-lg focus:ring-green-500 w-full sm:min-w-[250px]"
-                >
-                    <option value="" disabled>Select a restaurant</option>
-                    {restaurants.map(r => (
-                        <option key={r._id} value={r._id}>{r.name}</option>
+                <nav className="flex-1 px-4 py-6 space-y-2">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === tab.id ? 'bg-green-600 text-white shadow-md shadow-green-600/20' : 'text-gray-600 hover:bg-gray-50 hover:text-green-700'}`}
+                        >
+                            <tab.icon size={18} />
+                            {tab.name}
+                        </button>
                     ))}
-                </select>
-            </div>
-
-            {selectedRestaurant && (
-                <>
-                
-            {/* Service Charge Settings */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100 mb-10">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">Service Charge for {selectedRestaurant.name}</h2>
-                <form onSubmit={handleServiceChargeSubmit} className="flex flex-col sm:flex-row items-end gap-4">
-                    <div className="flex flex-col gap-2 flex-1">
-                        <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
-                            <input 
-                                type="checkbox" id="serviceChargeEnabled"
-                                checked={serviceChargeData.enabled} 
-                                onChange={(e) => setServiceChargeData({ ...serviceChargeData, enabled: e.target.checked })}
-                                className="w-5 h-5 text-orange-600 rounded"
-                            />
-                            <label htmlFor="serviceChargeEnabled" className="text-sm font-bold text-gray-700">Enable Service Charge / Delivery Fee</label>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-2 flex-1">
-                        <label className="text-sm font-bold text-gray-700">Amount (₹)</label>
-                        <input 
-                            type="number" 
-                            value={serviceChargeData.amount} 
-                            onChange={(e) => setServiceChargeData({ ...serviceChargeData, amount: Number(e.target.value) })} 
-                            placeholder="e.g. 500" 
-                            disabled={!serviceChargeData.enabled}
-                            className="px-4 py-3 border rounded-lg focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400" 
-                        />
-                    </div>
-                    <button type="submit" className="bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 h-[50px]">
-                        Save Settings
+                </nav>
+                <div className="p-4 border-t border-gray-100">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-xl font-bold hover:bg-red-100 transition-colors">
+                        <LogOut size={18} /> Logout
                     </button>
-                </form>
+                </div>
+            </aside>
+
+            {/* Main Layout */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+                
+                {/* Header Navbar */}
+                <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4 sm:px-8 z-10 shrink-0 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-600 hover:text-green-700">
+                            <MenuIcon size={24} />
+                        </button>
+                        <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
+                            {tabs.find(t => t.id === activeTab)?.name}
+                        </h1>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-500 hidden md:block">Managing Menu For:</span>
+                        <select 
+                            value={selectedRestaurant?._id || ''} 
+                            onChange={(e) => {
+                                const rest = restaurants.find(r => r._id === e.target.value);
+                                changeRestaurant(rest);
+                            }}
+                            className="px-4 py-2 bg-green-50 text-green-800 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-bold text-sm min-w-[150px] shadow-sm cursor-pointer"
+                        >
+                            <option value="" disabled>Select Hotel</option>
+                            {restaurants.map(r => (
+                                <option key={r._id} value={r._id}>{r.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </header>
+
+                {/* Content Area */}
+                <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50">
+                    <div className="max-w-6xl mx-auto pb-24">
+                        
+                        {/* TAB 1: MENU MANAGEMENT */}
+                        {activeTab === 'menu' && (
+                            <div className="animate-fade-in-up">
+                                {!selectedRestaurant ? (
+                                    <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+                                        <Utensils className="mx-auto h-16 w-16 text-gray-300 mb-4" />
+                                        <h3 className="text-xl font-bold text-gray-600">Please select a hotel from the top dropdown to manage its menu.</h3>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                                            <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                                                {editId ? <Edit size={20} className="text-blue-500"/> : <Plus size={20} className="text-green-500"/>} 
+                                                {editId ? 'Edit Menu Item' : 'Add New Menu Item'}
+                                            </h2>
+                                            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <input 
+                                                    name="name" value={formData.name} onChange={handleChange} 
+                                                    placeholder="Item Name" required 
+                                                    className="px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all" 
+                                                />
+                                                <input 
+                                                    name="price" type="number" value={formData.price} onChange={handleChange} 
+                                                    placeholder="Price (₹)" required 
+                                                    className="px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all" 
+                                                />
+                                                <select 
+                                                    name="category" value={formData.category} onChange={handleChange} 
+                                                    className="px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all cursor-pointer"
+                                                >
+                                                    {categories.map(cat => (
+                                                        <option key={cat} value={cat}>{cat}</option>
+                                                    ))}
+                                                </select>
+                            
+                                                <div className="flex items-center space-x-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200">
+                                                    <input 
+                                                        type="checkbox" name="isAvailable" id="isAvailable"
+                                                        checked={formData.isAvailable} onChange={handleChange} 
+                                                        className="w-5 h-5 text-green-600 rounded cursor-pointer"
+                                                    />
+                                                    <label htmlFor="isAvailable" className="font-bold text-gray-700 cursor-pointer">Item is Available</label>
+                                                </div>
+                                                <div className="md:col-span-2 flex gap-4 mt-2">
+                                                    <button type="submit" className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 shadow-md shadow-green-600/20 transition-all">
+                                                        {editId ? 'Update Item' : 'Save Item'}
+                                                    </button>
+                                                    {editId && (
+                                                        <button type="button" onClick={() => { setEditId(null); setFormData({ name: '', price: '', category: 'BEVERAGES', isAvailable: true })}} className="bg-gray-200 text-gray-700 px-8 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all">
+                                                            Cancel Edit
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                                            <h2 className="text-xl font-bold text-gray-800">Menu List <span className="text-gray-400 text-sm ml-2">({filteredProducts.length} items)</span></h2>
+                                            <div className="relative w-full md:w-80">
+                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                    <Search size={18} className="text-gray-400" />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search menu..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                            
+                                        {/* Bulk Actions */}
+                                        <div className={`bg-white border ${selectedIds.length > 0 ? 'border-blue-200 shadow-md ring-1 ring-blue-100' : 'border-gray-100 opacity-60'} rounded-xl p-4 mb-6 flex flex-col lg:flex-row items-center justify-between gap-4 transition-all duration-300`}>
+                                            <div className={`font-black ${selectedIds.length > 0 ? 'text-blue-700' : 'text-gray-400'}`}>
+                                                {selectedIds.length} item{selectedIds.length !== 1 ? 's' : ''} selected
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 items-center w-full lg:w-auto">
+                                                <button onClick={() => handleBulkAvailability(true)} disabled={selectedIds.length === 0} className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-100 disabled:opacity-50 flex items-center gap-2">
+                                                    <Check size={16} /> Mark Available
+                                                </button>
+                                                <button onClick={() => handleBulkAvailability(false)} disabled={selectedIds.length === 0} className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-100 disabled:opacity-50 flex items-center gap-2">
+                                                    <X size={16} /> Mark Sold Out
+                                                </button>
+                                                
+                                                <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1">
+                                                    <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} disabled={selectedIds.length === 0} className="px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:ring-blue-500 text-sm font-bold disabled:opacity-50 cursor-pointer">
+                                                        <option value="" disabled>Move to Category...</option>
+                                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                    </select>
+                                                    <button onClick={handleBulkCategoryChange} disabled={selectedIds.length === 0 || !bulkCategory} className="bg-blue-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all">
+                                                        Move
+                                                    </button>
+                                                </div>
+                                                
+                                                <button onClick={handleBulkDelete} disabled={selectedIds.length === 0} className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 disabled:opacity-50 flex items-center gap-2 ml-auto lg:ml-2">
+                                                    <Trash2 size={16} /> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                            
+                                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full text-left text-sm">
+                                                    <thead className="bg-gray-50/80 text-gray-600 font-bold border-b border-gray-100">
+                                                        <tr>
+                                                            <th className="px-6 py-4 w-10">
+                                                                <input type="checkbox" className="w-4 h-4 text-green-600 rounded border-gray-300 cursor-pointer" checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0} onChange={handleSelectAll} />
+                                                            </th>
+                                                            <th className="px-6 py-4">Item Name</th>
+                                                            <th className="px-6 py-4">Price</th>
+                                                            <th className="px-6 py-4">Category</th>
+                                                            <th className="px-6 py-4">Status</th>
+                                                            <th className="px-6 py-4">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-50">
+                                                        {filteredProducts.map(product => (
+                                                            <tr key={product._id} className={`hover:bg-gray-50/80 transition-colors ${selectedIds.includes(product._id) ? 'bg-blue-50/30' : ''}`}>
+                                                                <td className="px-6 py-4">
+                                                                    <input type="checkbox" className="w-4 h-4 text-green-600 rounded border-gray-300 cursor-pointer" checked={selectedIds.includes(product._id)} onChange={() => handleSelectOne(product._id)} />
+                                                                </td>
+                                                                <td className="px-6 py-4 font-bold text-gray-800">{product.name}</td>
+                                                                <td className="px-6 py-4 font-medium text-gray-600">₹{product.price}</td>
+                                                                <td className="px-6 py-4">
+                                                                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold tracking-wide">{product.category}</span>
+                                                                </td>
+                                                                <td className="px-6 py-4">
+                                                                    <button onClick={() => toggleAvailability(product)} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${product.isAvailable ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200'}`}>
+                                                                        {product.isAvailable ? 'Available' : 'Sold Out'}
+                                                                    </button>
+                                                                </td>
+                                                                <td className="px-6 py-4 flex gap-3">
+                                                                    <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-lg transition-colors"><Edit size={16} /></button>
+                                                                    <button onClick={() => handleDelete(product._id)} className="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        {filteredProducts.length === 0 && (
+                                                            <tr>
+                                                                <td colSpan="6" className="px-6 py-12 text-center text-gray-500 font-medium">No menu items found.</td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 2: SETTINGS */}
+                        {activeTab === 'settings' && (
+                            <div className="animate-fade-in-up max-w-4xl">
+                                
+                                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 mb-8">
+                                    <h2 className="text-xl font-bold mb-6 text-gray-800">Add / Edit Hotel Property</h2>
+                                    <form onSubmit={handleRestaurantSubmit} className="flex flex-col sm:flex-row gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                                        <input 
+                                            name="name" value={restaurantFormData.name} onChange={(e) => setRestaurantFormData({ name: e.target.value })} 
+                                            placeholder="Property Name (e.g., Resort Beyond Heaven Wayanad)" required 
+                                            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition-all" 
+                                        />
+                                        <button type="submit" className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 flex items-center justify-center gap-2 shadow-md shadow-green-600/20 transition-all">
+                                            {restaurantEditId ? <><Edit size={18}/> Update</> : <><Plus size={18}/> Add Property</>}
+                                        </button>
+                                        {restaurantEditId && (
+                                            <button type="button" onClick={() => { setRestaurantEditId(null); setRestaurantFormData({ name: '' })}} className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all">
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </form>
+
+                                    <h3 className="font-bold text-gray-700 mb-4">All Hotel Properties</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {restaurants.map((restaurant) => (
+                                            <div key={restaurant._id} className={`flex items-center justify-between gap-4 border p-4 rounded-xl transition-all ${restaurant.isActive !== false ? 'bg-white border-green-200 shadow-sm' : 'bg-gray-50 border-gray-200 opacity-75'}`}>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`font-bold truncate ${restaurant.isActive !== false ? 'text-gray-900' : 'text-gray-500 line-through'}`}>{restaurant.name}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">{restaurant.isActive !== false ? 'Active Property' : 'Disabled Property'}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => toggleRestaurantStatus(restaurant)} className={`p-2 rounded-lg transition-colors ${restaurant.isActive !== false ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`} title={restaurant.isActive !== false ? 'Disable' : 'Enable'}>
+                                                        {restaurant.isActive !== false ? <X size={18} /> : <Check size={18} />}
+                                                    </button>
+                                                    <button onClick={() => handleRestaurantEdit(restaurant)} className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Edit">
+                                                        <Edit size={18} />
+                                                    </button>
+                                                    <button onClick={() => handleRestaurantDelete(restaurant._id)} className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Delete">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {selectedRestaurant && (
+                                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-orange-100 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-full -z-0"></div>
+                                        <h2 className="text-xl font-bold mb-2 text-gray-800 relative z-10">Service Charge / Delivery Fee</h2>
+                                        <p className="text-gray-500 mb-6 text-sm relative z-10">Configuring fees for <strong className="text-orange-600">{selectedRestaurant.name}</strong></p>
+                                        
+                                        <form onSubmit={handleServiceChargeSubmit} className="flex flex-col sm:flex-row items-end gap-5 relative z-10">
+                                            <div className="flex flex-col gap-3 flex-1 w-full">
+                                                <label className="text-sm font-bold text-gray-700">Fee Status</label>
+                                                <div className="flex items-center gap-3 bg-gray-50 px-5 py-3.5 rounded-xl border border-gray-200 w-full cursor-pointer" onClick={() => setServiceChargeData({ ...serviceChargeData, enabled: !serviceChargeData.enabled })}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={serviceChargeData.enabled} 
+                                                        readOnly
+                                                        className="w-5 h-5 text-orange-600 rounded pointer-events-none"
+                                                    />
+                                                    <span className="font-bold text-gray-700 select-none">Enable Extra Fees</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-3 flex-1 w-full">
+                                                <label className="text-sm font-bold text-gray-700">Fee Amount (₹)</label>
+                                                <input 
+                                                    type="number" 
+                                                    value={serviceChargeData.amount} 
+                                                    onChange={(e) => setServiceChargeData({ ...serviceChargeData, amount: Number(e.target.value) })} 
+                                                    placeholder="e.g. 500" 
+                                                    disabled={!serviceChargeData.enabled}
+                                                    className="px-5 py-3 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white outline-none disabled:opacity-50 transition-all w-full" 
+                                                />
+                                            </div>
+                                            <button type="submit" className="w-full sm:w-auto bg-orange-600 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all h-[54px]">
+                                                Save Fees
+                                            </button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 3: SECURITY */}
+                        {activeTab === 'security' && (
+                            <div className="animate-fade-in-up max-w-2xl">
+                                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-3 bg-red-50 rounded-xl text-red-500">
+                                            <Shield size={24} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-bold text-gray-900">Change Admin Password</h2>
+                                            <p className="text-gray-500 text-sm">Ensure your account is using a long, random password to stay secure.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <form onSubmit={handleChangePassword} className="flex flex-col gap-5">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-sm font-bold text-gray-700">Current Password</label>
+                                            <input 
+                                                type="password" name="currentPassword" value={passwordData.currentPassword} 
+                                                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} 
+                                                placeholder="Enter current password" required 
+                                                className="px-5 py-3 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all w-full" 
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-sm font-bold text-gray-700">New Password</label>
+                                            <input 
+                                                type="password" name="newPassword" value={passwordData.newPassword} 
+                                                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} 
+                                                placeholder="Enter new password" required 
+                                                className="px-5 py-3 border border-gray-200 bg-gray-50 rounded-xl focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all w-full" 
+                                            />
+                                        </div>
+                                        <button type="submit" className="mt-2 bg-red-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 shadow-md shadow-red-600/20 transition-all self-start">
+                                            Update Password
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                </main>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-10">
-                <h2 className="text-xl font-bold mb-4">{editId ? 'Edit Item' : 'Add New Item'}</h2>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input 
-                        name="name" value={formData.name} onChange={handleChange} 
-                        placeholder="Item Name" required 
-                        className="px-4 py-2 border rounded-lg focus:ring-green-500" 
-                    />
-                    <input 
-                        name="price" type="number" value={formData.price} onChange={handleChange} 
-                        placeholder="Price" required 
-                        className="px-4 py-2 border rounded-lg focus:ring-green-500" 
-                    />
-                    <select 
-                        name="category" value={formData.category} onChange={handleChange} 
-                        className="px-4 py-2 border rounded-lg focus:ring-green-500"
-                    >
-                        {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
-
-                    <div className="flex items-center space-x-2 md:col-span-2">
-                        <input 
-                            type="checkbox" name="isAvailable" id="isAvailable"
-                            checked={formData.isAvailable} onChange={handleChange} 
-                            className="w-5 h-5 text-green-600 rounded"
-                        />
-                        <label htmlFor="isAvailable" className="font-medium">Is Available?</label>
-                    </div>
-                    <div className="md:col-span-2 flex gap-4 mt-2">
-                        <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700">
-                            {editId ? 'Update Item' : 'Add Item'}
-                        </button>
-                        {editId && (
-                            <button type="button" onClick={() => { setEditId(null); setFormData({ name: '', price: '', category: 'Vegetarian', isAvailable: true })}} className="bg-gray-400 text-white px-6 py-2 rounded-lg font-bold">
-                                Cancel
-                            </button>
-                        )}
-                    </div>
-                </form>
-            </div>
-
-            <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h2 className="text-xl font-bold">Menu Items ({filteredProducts.length})</h2>
-                
-                <div className="relative w-full md:w-64">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search size={18} className="text-gray-400" />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-full leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all sm:text-sm shadow-sm"
-                    />
-                </div>
-            </div>
-
-            {/* Bulk Actions */}
-            <div className={`bg-blue-50 border ${selectedIds.length > 0 ? 'border-blue-300 shadow-md' : 'border-blue-100 opacity-70'} rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 transition-all`}>
-                <div className={`font-bold ${selectedIds.length > 0 ? 'text-blue-800' : 'text-gray-500'}`}>
-                    {selectedIds.length} item{selectedIds.length !== 1 ? 's' : ''} selected
-                </div>
-                <div className="flex flex-wrap gap-2 items-center w-full md:w-auto">
-                    <button 
-                        onClick={() => handleBulkAvailability(true)} 
-                        disabled={selectedIds.length === 0}
-                        className="bg-white border border-blue-200 text-green-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shadow-sm"
-                    >
-                        <Check size={16} /> Mark Available
-                    </button>
-                    <button 
-                        onClick={() => handleBulkAvailability(false)} 
-                        disabled={selectedIds.length === 0}
-                        className="bg-white border border-blue-200 text-orange-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shadow-sm"
-                    >
-                        <X size={16} /> Mark Sold Out
-                    </button>
-                    
-                    <div className="flex items-center gap-1 border-l border-blue-200 pl-2 ml-1">
-                        <select 
-                            value={bulkCategory} 
-                            onChange={(e) => setBulkCategory(e.target.value)}
-                            disabled={selectedIds.length === 0}
-                            className="px-2 py-2 border rounded-lg focus:ring-blue-500 text-sm disabled:opacity-50"
-                        >
-                            <option value="" disabled>Change Category</option>
-                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                        </select>
-                        <button 
-                            onClick={handleBulkCategoryChange} 
-                            disabled={selectedIds.length === 0 || !bulkCategory} 
-                            className="bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm"
-                        >
-                            Apply
-                        </button>
-                    </div>
-                    
-                    <button 
-                        onClick={handleBulkDelete} 
-                        disabled={selectedIds.length === 0}
-                        className="bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 shadow-sm ml-auto md:ml-2"
-                    >
-                        <Trash2 size={16} /> Delete Selected
-                    </button>
-                </div>
-            </div>
-
-            <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-100 mb-20">
-                <table className="min-w-full text-left text-sm">
-                    <thead className="bg-gray-50 text-gray-700">
-                        <tr>
-                            <th className="px-6 py-3 w-10">
-                                <input 
-                                    type="checkbox" 
-                                    className="w-4 h-4 text-green-600 rounded border-gray-300"
-                                    checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
-                                    onChange={handleSelectAll}
-                                />
-                            </th>
-                            <th className="px-6 py-3">Name</th>
-                            <th className="px-6 py-3">Price</th>
-                            <th className="px-6 py-3">Category</th>
-                            <th className="px-6 py-3">Status</th>
-                            <th className="px-6 py-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredProducts.map(product => (
-                            <tr key={product._id} className={`hover:bg-gray-50 ${selectedIds.includes(product._id) ? 'bg-blue-50/50' : ''}`}>
-                                <td className="px-6 py-4">
-                                    <input 
-                                        type="checkbox" 
-                                        className="w-4 h-4 text-green-600 rounded border-gray-300"
-                                        checked={selectedIds.includes(product._id)}
-                                        onChange={() => handleSelectOne(product._id)}
-                                    />
-                                </td>
-                                <td className="px-6 py-4 font-medium">{product.name}</td>
-                                <td className="px-6 py-4">₹{product.price}</td>
-                                <td className="px-6 py-4">
-                                    <span className="bg-gray-100 px-2 py-1 rounded text-xs">{product.category}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <button 
-                                        onClick={() => toggleAvailability(product)}
-                                        className={`px-3 py-1 rounded-full text-xs font-bold ${product.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                                    >
-                                        {product.isAvailable ? 'Available' : 'Sold Out'}
-                                    </button>
-                                </td>
-                                <td className="px-6 py-4 flex gap-2">
-                                    <button onClick={() => handleEdit(product)} className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 font-medium transition-colors">Edit</button>
-                                    <button onClick={() => handleDelete(product._id)} className="bg-red-50 text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 font-medium transition-colors">Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            </>
+            {/* Mobile Overlay */}
+            {isMobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
             )}
         </div>
     );

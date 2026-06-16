@@ -452,11 +452,16 @@ const Orders = ({ isEmbedded = false }) => {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 align-top">
-                                                        <div className="flex flex-col gap-1.5 max-w-[200px] whitespace-normal">
+                                                        <div className="flex flex-col gap-2 min-w-[220px] max-w-[320px] whitespace-normal py-1">
                                                             {order.items.map((item, idx) => (
-                                                                <div key={idx} className="flex items-start text-sm">
-                                                                    <span className="font-bold text-gray-900 mr-2 min-w-[24px]">{item.qty}x</span>
-                                                                    <span className="text-gray-600 leading-tight">{item.name}</span>
+                                                                <div key={idx} className="flex items-start gap-2.5 text-sm group/item">
+                                                                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold border border-gray-200 group-hover/item:bg-green-50 group-hover/item:text-green-600 group-hover/item:border-green-200 transition-colors mt-0.5">
+                                                                        {idx + 1}
+                                                                    </span>
+                                                                    <div className="flex items-start gap-1.5 pt-0.5">
+                                                                        <span className="font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded text-xs border border-gray-100">{item.qty}x</span>
+                                                                        <span className="text-gray-700 font-medium leading-tight pt-0.5">{item.name}</span>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>

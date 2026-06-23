@@ -21,44 +21,59 @@ const CartItem = ({ item }) => {
         }
     };
 
+    const imageUrl = item.imageUrl || `https://source.unsplash.com/100x100/?food,${encodeURIComponent(item.category)}`;
+    const isVeg = item.category === 'Vegetarian' || item.category === 'Veg';
+
     return (
-        <div className="flex gap-4 items-center bg-white border border-gray-50 p-3 rounded-2xl shadow-sm">
-            <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-gray-800 truncate mb-1">{item.name}</h4>
-                <p className="text-green-600 font-bold mb-3">₹{item.price * (parseInt(localQty) || 0)}</p>
+        <div className="flex gap-4 items-start bg-white py-4 border-b border-gray-50 last:border-0 relative">
+            {/* Veg/Non-Veg Badge */}
+            <div className={`absolute top-4 left-0 w-3 h-3 rounded-sm border ${isVeg ? 'border-green-600' : 'border-red-600'} flex items-center justify-center bg-white z-10`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-green-600' : 'bg-red-600'}`}></div>
+            </div>
+
+            {/* Dish Image */}
+            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 ml-4 relative">
+                <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
+            </div>
+
+            <div className="flex-1 min-w-0 pr-6">
+                <h4 className="font-bold text-text-primary text-[15px] leading-tight mb-1">{item.name}</h4>
+                <p className="text-text-primary font-bold mb-3">₹{item.price * (parseInt(localQty) || 0)}</p>
                 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-1">
+                    <div className="flex items-center bg-green-50 border border-primary rounded-lg overflow-hidden shadow-sm h-8 w-24">
                         <button 
                             onClick={() => {
                                 if (item.qty === 1) removeFromCart(item._id);
                                 else updateQty(item._id, -1);
                             }}
-                            className="p-1 text-gray-500 hover:text-green-600 bg-white rounded-md shadow-sm"
+                            className="w-8 h-full flex items-center justify-center text-primary hover:bg-green-100 transition-colors"
                         >
-                            <Minus size={16} />
+                            <Minus size={14} strokeWidth={3} />
                         </button>
                         <input 
                             type="number" 
                             value={localQty} 
                             onChange={handleInputChange} 
-                            className="w-10 bg-transparent text-center font-bold text-gray-800 outline-none appearance-none" 
+                            className="flex-1 bg-transparent text-center font-bold text-primary text-sm outline-none appearance-none" 
                             min="0" 
                         />
                         <button 
                             onClick={() => updateQty(item._id, 1)}
-                            className="p-1 text-gray-500 hover:text-green-600 bg-white rounded-md shadow-sm"
+                            className="w-8 h-full flex items-center justify-center text-primary hover:bg-green-100 transition-colors"
                         >
-                            <Plus size={16} />
+                            <Plus size={14} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Remove button moved to corner */}
             <button 
                 onClick={() => removeFromCart(item._id)}
-                className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                className="absolute top-4 right-0 p-1 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
             >
-                <X size={20} />
+                <X size={16} />
             </button>
         </div>
     );

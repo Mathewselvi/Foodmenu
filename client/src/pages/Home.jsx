@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, WifiOff } from 'lucide-react';
+import { Search, WifiOff, MapPin, ChevronRight, Sparkles } from 'lucide-react';
 import FoodCard from '../components/FoodCard';
+import DishDetailsModal from '../components/DishDetailsModal';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
+import { motion } from 'framer-motion';
 import API_URL from '../api';
 
 const Home = () => {
@@ -11,13 +13,14 @@ const Home = () => {
     const [error, setError] = useState(null);
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    
     const { showNotification } = useNotification();
     const { selectedRestaurant, restaurants, changeRestaurant } = useRestaurant();
 
     useEffect(() => {
         if (restaurants.length > 0) {
             const activeRestaurants = restaurants.filter(r => r.isActive !== false);
-            
             if (selectedRestaurant) {
                 const currentInList = restaurants.find(r => r._id === selectedRestaurant._id);
                 if (currentInList && currentInList.isActive === false) {
@@ -57,44 +60,49 @@ const Home = () => {
 
     const filteredProducts = useMemo(() => {
         let result = products;
-        
         if (activeCategory !== 'All') {
             result = result.filter(item => item.category === activeCategory);
         }
-
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             result = result.filter(item => item.name.toLowerCase().includes(query));
         }
-
         return result;
     }, [activeCategory, products, searchQuery]);
 
     if (!selectedRestaurant) {
         const activeRestaurants = restaurants.filter(r => r.isActive !== false);
-
         return (
             <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
+                <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-[32px] shadow-xl border border-gray-100">
                     <div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary tracking-tight">
                             Select a Restaurant
                         </h2>
-                        <p className="mt-2 text-center text-sm text-gray-600">
-                            Please select a restaurant to view its menu and order food.
+                        <p className="mt-2 text-center text-sm text-text-secondary">
+                            Choose a dining location to begin your order.
                         </p>
                     </div>
                     <div className="mt-8 space-y-4">
                         {activeRestaurants.length === 0 ? (
-                            <p className="text-center text-gray-500">No restaurants are currently available.</p>
+                            <p className="text-center text-gray-500 font-medium">No restaurants available.</p>
                         ) : (
                             activeRestaurants.map((restaurant) => (
                                 <button
                                     key={restaurant._id}
                                     onClick={() => changeRestaurant(restaurant)}
-                                    className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-md hover:shadow-lg"
+                                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-2xl text-left hover:border-primary hover:bg-green-50 transition-all group shadow-sm"
                                 >
-                                    {restaurant.name}
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                            <MapPin className="text-gray-500 group-hover:text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-text-primary text-lg">{restaurant.name}</h3>
+                                            <p className="text-xs text-text-secondary">Tap to view menu</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="text-gray-400 group-hover:text-primary" />
                                 </button>
                             ))
                         )}
@@ -104,84 +112,175 @@ const Home = () => {
         );
     }
 
-    return (
-        <div className="bg-white min-h-screen pb-24 pt-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{selectedRestaurant.name} Menu</h2>
-                    </div>
-                    
-                    <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-                        {/* Search Bar */}
-                        <div className="relative w-full md:w-64">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search size={18} className="text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search dishes..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-full leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all sm:text-sm"
-                            />
-                        </div>
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+                <div className="bg-red-50 p-6 rounded-full mb-6">
+                    <WifiOff size={48} className="text-red-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-text-primary mb-2">Connection Issues</h3>
+                <p className="text-text-secondary mb-8 max-w-sm">We're having trouble reaching the kitchen. Please check your connection.</p>
+                <button 
+                    onClick={() => window.location.reload()}
+                    className="bg-primary text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-primary-light transition-all active:scale-95"
+                >
+                    Try Again
+                </button>
+            </div>
+        );
+    }
 
-                        {/* Categories Filter */}
-                        <div className="flex overflow-x-auto pb-2 w-full md:w-auto scrollbar-hide space-x-2">
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setActiveCategory(cat)}
-                                    className={`px-5 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all shadow-sm flex-shrink-0 ${
-                                        activeCategory === cat
-                                            ? 'bg-green-600 text-white shadow-md'
-                                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-100'
-                                    }`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
+    return (
+        <div className="bg-background min-h-screen pb-24 pt-2">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                {/* Search Section */}
+                <div className="sticky top-20 z-30 bg-background/95 backdrop-blur-md pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Search size={20} className="text-gray-400" />
                         </div>
+                        <input
+                            type="text"
+                            placeholder="Search dishes, cuisines..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-12 pr-4 py-3.5 border-none rounded-2xl bg-white shadow-sm text-text-primary placeholder-gray-400 focus:ring-2 focus:ring-primary focus:outline-none transition-shadow text-[15px] font-medium"
+                        />
+                        {searchQuery && (
+                            <button 
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                            >
+                                Clear
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                {error ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="bg-red-50 p-6 rounded-full mb-4">
-                            <WifiOff size={48} className="text-red-500" />
+                {/* Hero Banner - Only show if not searching */}
+                {!searchQuery && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 mb-8 relative rounded-[28px] overflow-hidden bg-gray-900 shadow-xl"
+                    >
+                        <div className="absolute inset-0">
+                            <img 
+                                src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070" 
+                                alt="Delicious food" 
+                                className="w-full h-full object-cover opacity-60 mix-blend-overlay"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent"></div>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Connection Issues</h3>
-                        <p className="text-gray-500 mb-6 max-w-xs">We're having trouble reaching the kitchen. Please check your connection and refresh.</p>
-                        <button 
-                            onClick={() => window.location.reload()}
-                            className="bg-green-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-green-700 transition-all"
-                        >
-                            Try Again
-                        </button>
-                    </div>
-                ) : loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[1, 2, 3, 4, 5, 6].map((idx) => (
-                            <div key={idx} className="bg-gray-100 rounded-2xl h-80 animate-pulse border border-gray-200"></div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredProducts.map(product => (
-                            <FoodCard key={product._id} product={product} />
-                        ))}
-                    </div>
+                        <div className="relative px-6 py-8 sm:p-10 flex flex-col justify-center h-full max-w-sm">
+                            <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-max mb-4">
+                                <Sparkles size={14} className="text-yellow-400" />
+                                <span className="text-xs font-bold text-white uppercase tracking-wider">Premium Dining</span>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-2 tracking-tight">
+                                Delicious food, <br/>delivered to your room.
+                            </h2>
+                            <p className="text-gray-200 text-sm mb-6">Freshly prepared & hygienic meals</p>
+                            <button 
+                                onClick={() => {
+                                    document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="bg-primary hover:bg-primary-light text-white font-bold py-3 px-6 rounded-xl w-max transition-colors shadow-lg shadow-green-900/50"
+                            >
+                                Order Now
+                            </button>
+                        </div>
+                    </motion.div>
                 )}
-                
-                {!loading && filteredProducts.length === 0 && (
-                    <div className="text-center py-20">
-                        <p className="text-gray-500 text-lg">
-                            {searchQuery ? `No results found for "${searchQuery}"` : "No items found in this category."}
-                        </p>
+
+                {/* Categories */}
+                <div className="mb-8" id="categories">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-text-primary tracking-tight">Categories</h3>
                     </div>
-                )}
+                    <div className="flex overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 gap-3">
+                        {categories.map((cat, index) => {
+                            // Map generic images to categories for the UI
+                            const catImages = {
+                                'Vegetarian': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&q=80',
+                                'Non-Vegetarian': 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=100&q=80',
+                                'All': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=100&q=80'
+                            };
+                            const img = catImages[cat] || `https://source.unsplash.com/100x100/?food,${cat}`;
+
+                            return (
+                                <button
+                                    key={cat}
+                                    onClick={() => setActiveCategory(cat)}
+                                    className={`flex flex-col items-center gap-2 min-w-[72px] sm:min-w-[80px] p-2 rounded-2xl transition-all ${
+                                        activeCategory === cat ? 'bg-green-50 scale-105' : 'bg-transparent hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <div className={`w-16 h-16 rounded-full overflow-hidden border-2 ${activeCategory === cat ? 'border-primary shadow-md' : 'border-transparent shadow-sm'}`}>
+                                        <img src={img} alt={cat} className="w-full h-full object-cover" />
+                                    </div>
+                                    <span className={`text-xs font-semibold whitespace-nowrap ${activeCategory === cat ? 'text-primary' : 'text-text-secondary'}`}>
+                                        {cat}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Popular Dishes or Search Results */}
+                <div>
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-text-primary tracking-tight">
+                            {searchQuery ? 'Search Results' : activeCategory === 'All' ? 'Popular Dishes' : `${activeCategory} Dishes`}
+                        </h3>
+                    </div>
+
+                    {loading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[1, 2, 3, 4, 5, 6].map((idx) => (
+                                <div key={idx} className="bg-white rounded-[24px] h-[340px] animate-pulse border border-gray-100 shadow-sm"></div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredProducts.map((product, index) => (
+                                <motion.div
+                                    key={product._id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                >
+                                    <FoodCard 
+                                        product={product} 
+                                        onClick={() => setSelectedProduct(product)}
+                                    />
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {!loading && filteredProducts.length === 0 && (
+                        <div className="text-center py-20 bg-white rounded-[32px] border border-gray-100 shadow-sm mt-4">
+                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Search size={32} className="text-gray-300" />
+                            </div>
+                            <h3 className="text-xl font-bold text-text-primary mb-2">No dishes found</h3>
+                            <p className="text-text-secondary text-sm max-w-xs mx-auto">
+                                {searchQuery ? `We couldn't find anything matching "${searchQuery}"` : "No items available in this category at the moment."}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
+
+            {/* Product Details Modal */}
+            <DishDetailsModal 
+                isOpen={!!selectedProduct} 
+                onClose={() => setSelectedProduct(null)} 
+                product={selectedProduct} 
+            />
         </div>
     );
 };

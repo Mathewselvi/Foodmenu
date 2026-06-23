@@ -1,44 +1,57 @@
-import { ShoppingBag, Menu, X } from 'lucide-react';
+import { Bell, MapPin, ShoppingBag } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
-    const { totalItems, setIsCartOpen } = useCart();
     const location = useLocation();
+    const { totalItems, setIsCartOpen } = useCart();
 
-    if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/orders')) {
+    if (
+        location.pathname.startsWith('/admin') || 
+        location.pathname.startsWith('/orders') ||
+        location.pathname.startsWith('/checkout')
+    ) {
         return null;
     }
 
     return (
-        <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-green-100 shadow-sm">
+        <nav className="bg-white sticky top-0 z-40 border-b border-gray-100 pb-2 pt-4">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    <div className="flex-shrink-0 flex items-center">
-                        <Link to="/" className="text-2xl font-black text-green-800 tracking-tight flex items-center">
-                           <span className="text-green-700">Food</span>
-                           <span className="text-gray-800">Menu</span>
-                        </Link>
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-sm">
+                            F
+                        </div>
+                        <div className="flex flex-col">
+                            <h1 className="text-[16px] font-bold text-text-primary leading-tight">
+                                Friends Hotel & Resort
+                            </h1>
+                            <div className="flex items-center gap-1 text-text-secondary">
+                                <MapPin size={12} className="text-primary" />
+                                <span className="text-[12px]">Wayanad, Kerala</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-4">
-
-                        <Link 
-                            to="/admin" 
-                            className="text-gray-600 font-bold hover:text-green-700 bg-gray-50 border border-gray-100 hover:bg-gray-100 px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base rounded-full transition-all"
-                        >
-                            Admin
-                        </Link>
-                        <button
+                    <div className="flex items-center gap-4">
+                        <a href="/admin" className="hidden sm:flex items-center gap-2 text-[13px] font-bold text-primary bg-primary/10 px-4 py-2 rounded-full hover:bg-primary/20 transition-colors">
+                            Admin Login
+                        </a>
+                        
+                        <button 
                             onClick={() => setIsCartOpen(true)}
-                            className="relative bg-green-50 hover:bg-green-100 p-2 rounded-full transition-colors duration-200 focus:outline-none"
-                            aria-label="Cart"
+                            className="relative p-2 rounded-full hover:bg-gray-50 transition-colors focus:outline-none hidden sm:block"
                         >
-                            <ShoppingBag className="h-6 w-6 text-green-700" />
+                            <ShoppingBag size={22} className="text-text-primary" />
                             {totalItems > 0 && (
-                                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-green-600 rounded-full">
+                                <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center">
                                     {totalItems}
                                 </span>
                             )}
+                        </button>
+
+                        <button className="relative p-2 rounded-full hover:bg-gray-50 transition-colors focus:outline-none">
+                            <Bell size={22} className="text-text-primary" />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                         </button>
                     </div>
                 </div>
@@ -48,3 +61,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

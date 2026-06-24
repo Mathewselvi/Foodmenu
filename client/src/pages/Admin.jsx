@@ -3,7 +3,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon, ClipboardList, Home, LayoutDashboard, TrendingUp, DollarSign, Activity, Package, ExternalLink, ChevronDown, CheckCircle2, AlertCircle, MapPin } from 'lucide-react';
-import API_URL from '../api';
+import API_URL, { getFullImageUrl } from '../api';
 import Orders from './Orders';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -783,8 +783,8 @@ const Admin = () => {
                                                                     </td>
                                                                     <td className="px-6 py-4">
                                                                         <div className="flex items-center gap-3">
-                                                                            <div className="w-10 h-10 bg-gray-100 rounded-xl overflow-hidden shrink-0 hidden sm:block">
-                                                                                <img src={product.imageUrl || `https://source.unsplash.com/100x100/?food,${product.category}`} className="w-full h-full object-cover" alt="" />
+                                                                            <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shadow-inner">
+                                                                                <img src={getFullImageUrl(product.imageUrl) || `https://source.unsplash.com/100x100/?food,${product.category}`} className="w-full h-full object-cover" alt="" />
                                                                             </div>
                                                                             <span className="font-bold text-gray-900 text-[15px] group-hover:text-primary transition-colors">{product.name}</span>
                                                                         </div>

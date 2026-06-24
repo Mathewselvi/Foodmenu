@@ -7,4 +7,13 @@ if (base.endsWith('/')) {
 
 const API_URL = base;
 
+export const getFullImageUrl = (url) => {
+    if (!url) return '';
+    if (url.includes('/uploads/')) {
+        const path = url.substring(url.indexOf('/uploads/'));
+        return `${API_URL.replace('/api', '')}${path}`;
+    }
+    return url;
+};
+
 export default API_URL;

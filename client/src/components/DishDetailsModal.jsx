@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Minus, Plus, Star, Info, Leaf, Drumstick } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getFullImageUrl } from '../api';
 
 const DishDetailsModal = ({ isOpen, onClose, product }) => {
     const { addToCart, cartItems, updateQty, removeFromCart } = useCart();
@@ -10,7 +11,7 @@ const DishDetailsModal = ({ isOpen, onClose, product }) => {
 
     const cartItem = cartItems.find(item => item._id === product._id);
     const isVeg = product.category === 'Vegetarian' || product.category === 'Veg';
-    const imageUrl = product.imageUrl || `https://source.unsplash.com/400x400/?food,${encodeURIComponent(product.category)}`;
+    const imageUrl = getFullImageUrl(product.imageUrl) || `https://source.unsplash.com/400x400/?food,${encodeURIComponent(product.category)}`;
 
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) {

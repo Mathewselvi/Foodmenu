@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Minus, Star } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { motion } from 'framer-motion';
+import { getFullImageUrl } from '../api';
 
 const FoodCard = ({ product, onClick }) => {
     const { addToCart, cartItems, updateQty, removeFromCart, setExactQty } = useCart();
@@ -44,7 +45,7 @@ const FoodCard = ({ product, onClick }) => {
     };
 
     // Placeholder image if product doesn't have one
-    const imageUrl = product.imageUrl || `https://source.unsplash.com/400x300/?food,${encodeURIComponent(product.category)}`;
+    const imageUrl = getFullImageUrl(product.imageUrl) || `https://source.unsplash.com/400x300/?food,${encodeURIComponent(product.category)}`;
     const isVeg = product.category === 'Vegetarian' || product.category === 'Veg';
 
     return (

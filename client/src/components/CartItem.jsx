@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Minus, Plus } from 'lucide-react';
+import { X, Minus, Plus, Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getFullImageUrl } from '../api';
 
 const CartItem = ({ item }) => {
     const { updateQty, removeFromCart, setExactQty } = useCart();
@@ -21,7 +22,7 @@ const CartItem = ({ item }) => {
         }
     };
 
-    const imageUrl = item.imageUrl || `https://source.unsplash.com/100x100/?food,${encodeURIComponent(item.category)}`;
+    const imageUrl = getFullImageUrl(item.imageUrl) || `https://source.unsplash.com/100x100/?food,${encodeURIComponent(item.category)}`;
     const isVeg = item.category === 'Vegetarian' || item.category === 'Veg';
 
     return (

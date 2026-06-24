@@ -26,7 +26,8 @@ const Home = () => {
                 if (currentInList && currentInList.isActive === false) {
                     changeRestaurant(null);
                 }
-            } else if (activeRestaurants.length === 1) {
+            } else if (activeRestaurants.length > 0) {
+                // Auto-select the first active restaurant to skip location selector
                 changeRestaurant(activeRestaurants[0]);
             }
         }
@@ -71,43 +72,9 @@ const Home = () => {
     }, [activeCategory, products, searchQuery]);
 
     if (!selectedRestaurant) {
-        const activeRestaurants = restaurants.filter(r => r.isActive !== false);
         return (
-            <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-[32px] shadow-xl border border-gray-100">
-                    <div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary tracking-tight">
-                            Select a Restaurant
-                        </h2>
-                        <p className="mt-2 text-center text-sm text-text-secondary">
-                            Choose a dining location to begin your order.
-                        </p>
-                    </div>
-                    <div className="mt-8 space-y-4">
-                        {activeRestaurants.length === 0 ? (
-                            <p className="text-center text-gray-500 font-medium">No restaurants available.</p>
-                        ) : (
-                            activeRestaurants.map((restaurant) => (
-                                <button
-                                    key={restaurant._id}
-                                    onClick={() => changeRestaurant(restaurant)}
-                                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-2xl text-left hover:border-primary hover:bg-green-50 transition-all group shadow-sm"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                            <MapPin className="text-gray-500 group-hover:text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-text-primary text-lg">{restaurant.name}</h3>
-                                            <p className="text-xs text-text-secondary">Tap to view menu</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="text-gray-400 group-hover:text-primary" />
-                                </button>
-                            ))
-                        )}
-                    </div>
-                </div>
+            <div className="bg-background min-h-screen flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
             </div>
         );
     }

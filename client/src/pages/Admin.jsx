@@ -21,6 +21,7 @@ const Admin = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
     const [bulkCategory, setBulkCategory] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
     
     // Dashboard States
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -116,6 +117,33 @@ const Admin = () => {
         } catch (error) {
             console.error(error);
             showNotification('Error saving item', 'error');
+        }
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+
+        setIsUploading(true);
+        try {
+            const res = await fetch(`${API_URL}/upload`, {
+                method: 'POST',
+                body: uploadData
+            });
+
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            
+            setFormData({ ...formData, imageUrl: `${API_URL.replace('/api', '')}${data.imageUrl}` });
+            showNotification('Image uploaded successfully');
+        } catch (error) {
+            console.error('Upload error:', error);
+            showNotification('Failed to upload image', 'error');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -616,12 +644,28 @@ const Admin = () => {
                                                         </div>
                                                     </div>
                                                     <div className="relative">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Image URL (Optional)</label>
-                                                        <input 
-                                                            name="imageUrl" value={formData.imageUrl || ''} onChange={handleChange} 
-                                                            placeholder="e.g. https://example.com/image.jpg" 
-                                                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 placeholder-gray-400" 
-                                                        />
+                                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Image (Upload or URL)</label>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="relative flex-1">
+                                                                <input 
+                                                                    name="imageUrl" value={formData.imageUrl || ''} onChange={handleChange} 
+                                                                    placeholder="e.g. https://example.com/image.jpg" 
+                                                                    className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 placeholder-gray-400" 
+                                                                />
+                                                            </div>
+                                                            <div className="relative shrink-0">
+                                                                <input 
+                                                                    type="file" 
+                                                                    accept="image/*"
+                                                                    onChange={handleImageUpload}
+                                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                                    title="Upload Image"
+                                                                />
+                                                                <button type="button" disabled={isUploading} className="bg-gray-100 border border-gray-200 text-gray-700 px-5 py-4 rounded-2xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center min-w-[120px]">
+                                                                    {isUploading ? <div className="w-5 h-5 border-2 border-gray-400 border-t-gray-700 rounded-full animate-spin"></div> : 'Upload'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 

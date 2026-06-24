@@ -13,6 +13,7 @@ const Checkout = () => {
     const [email, setEmail] = useState('');
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [checkoutStep, setCheckoutStep] = useState(1); // 1 = Form, 2 = Payment, 3 = Success
+    const [finalAmount, setFinalAmount] = useState(0);
     const navigate = useNavigate();
     const { showNotification } = useNotification();
     const { selectedRestaurant } = useRestaurant();
@@ -64,6 +65,7 @@ const Checkout = () => {
             });
 
             setIsPlacingOrder(false);
+            setFinalAmount(grandTotal);
             setCheckoutStep(3);
             clearCart();
             window.scrollTo(0, 0);
@@ -124,7 +126,7 @@ const Checkout = () => {
                         className="max-w-3xl mx-auto p-4 space-y-6 mt-4"
                     >
                         {/* Guest Details Section */}
-                        <div className="bg-white p-6 md:p-8 rounded-[24px] shadow-sm border border-gray-100 relative overflow-hidden">
+                        <div className="bg-white p-5 md:p-8 rounded-[24px] shadow-sm border border-gray-100 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100px] -z-10"></div>
                             
                             <div className="flex justify-between items-center mb-6">
@@ -157,7 +159,7 @@ const Checkout = () => {
                         </div>
 
                         {/* Order Summary */}
-                        <div className="bg-white p-6 md:p-8 rounded-[24px] shadow-sm border border-gray-100">
+                        <div className="bg-white p-5 md:p-8 rounded-[24px] shadow-sm border border-gray-100">
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
                             <div className="space-y-4 mb-6">
                                 {cartItems.map((item) => (
@@ -186,7 +188,7 @@ const Checkout = () => {
                             
                             <div className="flex justify-between items-center pt-5 border-t border-gray-100 bg-gray-50/50 -mx-6 -mb-6 p-6 rounded-b-[24px]">
                                 <span className="font-bold text-gray-600 uppercase tracking-wider text-sm">To Pay</span>
-                                <span className="font-black text-primary text-3xl">₹{grandTotal}</span>
+                                <span className="font-black text-primary text-2xl sm:text-3xl">₹{grandTotal}</span>
                             </div>
                         </div>
 
@@ -227,7 +229,7 @@ const Checkout = () => {
                                 {/* Scanner Line Animation */}
                                 <div className="absolute inset-x-0 top-0 h-1 bg-primary/50 shadow-[0_0_15px_rgba(22,163,74,0.5)] z-20 hidden group-hover:block animate-scan"></div>
                                 
-                                <img src="/qr.jpeg" alt="GPay QR Code" className="w-48 h-48 object-contain rounded-xl mix-blend-multiply" onError={(e) => {
+                                <img src="/qr.jpeg" alt="GPay QR Code" className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-xl mix-blend-multiply" onError={(e) => {
                                     e.target.onerror = null; 
                                     e.target.src = "https://via.placeholder.com/200?text=QR+Code";
                                 }} />
@@ -316,7 +318,7 @@ const Checkout = () => {
                             
                             <div className="mb-8">
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Amount Paid</p>
-                                <p className="text-3xl font-black text-gray-900">₹{grandTotal}</p>
+                                <p className="text-3xl font-black text-gray-900">₹{finalAmount}</p>
                             </div>
                             <div className="mt-8">
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Sent to</p>
@@ -334,7 +336,7 @@ const Checkout = () => {
 
             {/* Bottom Sticky Checkout Bar for Step 1 */}
             {checkoutStep === 1 && (
-                <div className="fixed bottom-0 left-0 right-0 bg-white p-4 pb-safe shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.15)] z-40 border-t border-gray-100">
+                <div className="fixed bottom-0 left-0 right-0 bg-white p-4 pb-6 sm:pb-4 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.15)] z-40 border-t border-gray-100">
                     <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
                         <div className="flex flex-col">
                             <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">Total to Pay</span>

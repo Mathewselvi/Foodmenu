@@ -7,8 +7,13 @@ const BottomNav = () => {
   const location = useLocation();
   const { totalItems, cartTotal, setIsCartOpen } = useCart();
 
-  // Don't show bottom nav on admin routes
-  if (location.pathname.startsWith('/admin')) {
+  // Don't show bottom nav on specific routes where it overlaps with page-specific fixed CTAs
+  if (
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/checkout') ||
+    location.pathname.startsWith('/order-success') ||
+    location.pathname.startsWith('/orders')
+  ) {
     return null;
   }
 

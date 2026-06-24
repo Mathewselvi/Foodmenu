@@ -23,13 +23,9 @@ const Navbar = () => {
                             F
                         </div>
                         <div className="flex flex-col">
-                            <h1 className="text-[16px] font-bold text-text-primary leading-tight">
+                            <h1 className="text-[16px] font-bold text-text-primary leading-tight mt-1">
                                 Friends Hotel & Resort
                             </h1>
-                            <div className="flex items-center gap-1 text-text-secondary">
-                                <MapPin size={12} className="text-primary" />
-                                <span className="text-[12px]">Wayanad, Kerala</span>
-                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">

@@ -143,7 +143,7 @@ const CartDrawer = () => {
 
                         {/* Sticky Bottom CTA */}
                         {cartItems.length > 0 && (
-                            <div className="absolute bottom-0 left-0 right-0 bg-white p-4 pb-safe shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] rounded-t-[24px] border-t border-gray-100">
+                            <div className="absolute bottom-0 left-0 right-0 bg-white p-4 pb-6 sm:pb-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] rounded-t-[24px] border-t border-gray-100">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex flex-col">
                                         <span className="font-bold text-[18px] text-text-primary leading-tight">₹{grandTotal}</span>

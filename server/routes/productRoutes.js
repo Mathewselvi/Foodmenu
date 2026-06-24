@@ -24,13 +24,14 @@ router.get('/', async (req, res) => {
 // @access  Private (Admin only)
 router.post('/', protect, async (req, res) => {
     try {
-        const { name, price, category, isAvailable, restaurant } = req.body;
+        const { name, price, category, isAvailable, restaurant, imageUrl } = req.body;
         const product = new Product({
             name,
             price,
             category,
             isAvailable,
-            restaurant
+            restaurant,
+            imageUrl
         });
         const createdProduct = await product.save();
         res.status(201).json(createdProduct);
@@ -44,7 +45,7 @@ router.post('/', protect, async (req, res) => {
 // @access  Private (Admin only)
 router.put('/:id', protect, async (req, res) => {
     try {
-        const { name, price, category, isAvailable, restaurant } = req.body;
+        const { name, price, category, isAvailable, restaurant, imageUrl } = req.body;
         const product = await Product.findById(req.params.id);
 
         if (product) {
@@ -53,6 +54,7 @@ router.put('/:id', protect, async (req, res) => {
             product.category = category || product.category;
             product.isAvailable = isAvailable !== undefined ? isAvailable : product.isAvailable;
             if (restaurant) product.restaurant = restaurant;
+            if (imageUrl !== undefined) product.imageUrl = imageUrl;
 
             const updatedProduct = await product.save();
             res.json(updatedProduct);

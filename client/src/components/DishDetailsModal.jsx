@@ -97,7 +97,7 @@ const DishDetailsModal = ({ isOpen, onClose, product }) => {
                         </div>
 
                         {/* Bottom Sticky Action Area */}
-                        <div className="p-4 border-t border-gray-100 bg-white shrink-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+                        <div className="p-4 pb-6 sm:pb-4 border-t border-gray-100 bg-white shrink-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-col">
                                     <span className="text-sm text-text-secondary font-medium">Total Price</span>

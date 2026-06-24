@@ -41,7 +41,7 @@ const Home = () => {
                 const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
                 if (!res.ok) throw new Error('Failed to fetch products');
                 const data = await res.json();
-                setProducts(data);
+                setProducts(Array.isArray(data) ? data : []);
                 setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch products:", error);
@@ -66,7 +66,7 @@ const Home = () => {
         }
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            result = result.filter(item => item.name.toLowerCase().includes(query));
+            result = result.filter(item => item?.name?.toLowerCase().includes(query));
         }
         return result;
     }, [activeCategory, products, searchQuery]);

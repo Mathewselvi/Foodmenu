@@ -84,7 +84,7 @@ const MyOrders = () => {
                     </div>
                 ) : filteredOrders.length === 0 ? (
                     <div className="text-center py-20 text-gray-500">
-                        No {activeTab.toLowerCase()} orders found.
+                        No {activeTab?.toLowerCase()} orders found.
                     </div>
                 ) : (
                     <div className="space-y-4">

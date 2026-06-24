@@ -36,10 +36,10 @@ const Admin = () => {
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) return products;
         const query = searchQuery.toLowerCase();
-        return products.filter(p => 
-            p.name.toLowerCase().includes(query) || 
-            p.category.toLowerCase().includes(query)
-        );
+        return products?.filter(p => 
+            (p?.name?.toLowerCase().includes(query)) || 
+            (p?.category?.toLowerCase().includes(query))
+        ) || [];
     }, [products, searchQuery]);
 
     useEffect(() => {
@@ -61,7 +61,7 @@ const Admin = () => {
             const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
             if (!res.ok) throw new Error('Fetch failed');
             const data = await res.json();
-            setProducts(data);
+            setProducts(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error(error);
             showNotification('Failed to load menu items', 'error');
@@ -73,7 +73,7 @@ const Admin = () => {
             const res = await fetch(`${API_URL}/restaurants`);
             if (res.ok) {
                 const data = await res.json();
-                setRestaurants(data);
+                setRestaurants(Array.isArray(data) ? data : []);
             }
         } catch (error) {
             console.error("Failed to fetch restaurants:", error);

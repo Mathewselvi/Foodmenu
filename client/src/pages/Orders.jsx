@@ -26,10 +26,10 @@ const Orders = ({ isEmbedded = false }) => {
     const filteredEditProducts = useMemo(() => {
         if (!editSearchQuery.trim()) return products;
         const query = editSearchQuery.toLowerCase();
-        return products.filter(p => 
-            p.name.toLowerCase().includes(query) || 
-            p.category.toLowerCase().includes(query)
-        );
+        return products?.filter(p => 
+            (p?.name?.toLowerCase().includes(query)) || 
+            (p?.category?.toLowerCase().includes(query))
+        ) || [];
     }, [products, editSearchQuery]);
 
     const fetchProducts = async () => {

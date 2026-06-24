@@ -137,7 +137,7 @@ const Admin = () => {
             if (!res.ok) throw new Error('Upload failed');
             const data = await res.json();
             
-            setFormData({ ...formData, imageUrl: `${API_URL.replace('/api', '')}${data.imageUrl}` });
+            setFormData({ ...formData, imageUrl: data.imageUrl });
             showNotification('Image uploaded successfully');
         } catch (error) {
             console.error('Upload error:', error);

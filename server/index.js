@@ -1,25 +1,13 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
-
-// Multer storage config
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Append extension
-    }
+// Use memory storage for Vercel/serverless compatibility
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
-const upload = multer({ storage: storage });
 const cors = require('cors');
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
@@ -39,10 +27,10 @@ const app = express();
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept']
 }));
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Routes
 app.use('/api/products', productRoutes);
@@ -52,12 +40,20 @@ app.use('/api/admin', adminRoutes);
 
 // Image Upload route
 app.post('/api/upload', upload.single('image'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        
+        // Convert the buffer to a base64 string
+        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        
+        // Return the base64 string as the imageUrl
+        res.json({ imageUrl: base64Image });
+    } catch (error) {
+        console.error('Upload Error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-    // Return the URL path
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.json({ imageUrl });
 });
 
 // Root route

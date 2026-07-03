@@ -1,13 +1,16 @@
 import { Bell, MapPin, ShoppingBag } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useRestaurant } from '../context/RestaurantContext';
 
 const Navbar = () => {
     const location = useLocation();
     const { totalItems, setIsCartOpen } = useCart();
+    const { selectedRestaurant } = useRestaurant();
+    const restaurantName = selectedRestaurant?.name || 'Grillo calicut';
 
     if (
-        location.pathname.startsWith('/admin') || 
+        location.pathname.startsWith('/admin') ||
         location.pathname.startsWith('/orders') ||
         location.pathname.startsWith('/checkout')
     ) {
@@ -20,11 +23,11 @@ const Navbar = () => {
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-sm">
-                            F
+                            {restaurantName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex flex-col">
                             <h1 className="text-[16px] font-bold text-text-primary leading-tight mt-1">
-                                Friends Hotel & Resort
+                                {restaurantName}
                             </h1>
                         </div>
                     </div>
@@ -32,8 +35,8 @@ const Navbar = () => {
                         <a href="/admin" className="hidden sm:flex items-center gap-2 text-[13px] font-bold text-primary bg-primary/10 px-4 py-2 rounded-full hover:bg-primary/20 transition-colors">
                             Admin Login
                         </a>
-                        
-                        <button 
+
+                        <button
                             onClick={() => setIsCartOpen(true)}
                             className="relative p-2 rounded-full hover:bg-gray-50 transition-colors focus:outline-none hidden sm:block"
                         >

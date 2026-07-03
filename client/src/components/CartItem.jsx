@@ -39,7 +39,7 @@ const CartItem = ({ item }) => {
 
             <div className="flex-1 min-w-0 pr-6">
                 <h4 className="font-bold text-text-primary text-[15px] leading-tight mb-1">{item.name}</h4>
-                <p className="text-text-primary font-bold mb-3">₹{item.price * (parseInt(localQty) || 0)}</p>
+                <p className="text-text-primary font-bold mb-3">{item.price === 0 ? 'Market Price' : `₹${item.price * (parseInt(localQty) || 0)}`}</p>
                 
                 <div className="flex items-center gap-3">
                     <div className="flex items-center bg-green-50 border border-primary rounded-lg overflow-hidden shadow-sm h-8 w-24">

@@ -44,17 +44,17 @@ const FoodCard = ({ product, onClick }) => {
         }
     };
 
-    // Placeholder image if product doesn't have one
-    const imageUrl = getFullImageUrl(product.imageUrl) || `https://source.unsplash.com/400x300/?food,${encodeURIComponent(product.category)}`;
-    const isVeg = product.category === 'Vegetarian' || product.category === 'Veg';
+    // Reliable fallback image if product doesn't have one
+    const imageUrl = getFullImageUrl(product?.imageUrl) || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
+    const isVeg = (product?.category || '') === 'Vegetarian' || (product?.category || '') === 'Veg';
 
     return (
         <motion.div 
-            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className="bg-white rounded-[24px] shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col border border-gray-100 overflow-hidden relative cursor-pointer group"
+            className="bg-white rounded-[24px] shadow-sm transition-all duration-300 flex flex-col border border-gray-100 overflow-hidden relative cursor-pointer group"
         >
-            {!product.isAvailable && (
+            {!product?.isAvailable && (
                 <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-20 flex items-center justify-center">
                     <span className="bg-text-primary text-white font-bold px-4 py-2 rounded-full uppercase tracking-wider text-xs shadow-md">
                         Sold Out
@@ -66,7 +66,7 @@ const FoodCard = ({ product, onClick }) => {
             <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
                 <img 
                     src={imageUrl} 
-                    alt={product.name} 
+                    alt={product?.name || 'Food item'} 
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     onError={(e) => {
                         e.target.onerror = null; 
@@ -86,13 +86,13 @@ const FoodCard = ({ product, onClick }) => {
             <div className="p-4 flex flex-col flex-grow">
                 <div className="flex justify-between items-start mb-1">
                     <h3 className="text-[18px] font-bold text-text-primary leading-tight line-clamp-2 pr-2">
-                        {product.name}
+                        {product?.name || 'Item'}
                     </h3>
                 </div>
                 
                 <div className="flex items-center gap-2 mb-2">
                     <span className="text-[12px] font-medium text-text-secondary bg-gray-100 px-2 py-0.5 rounded-md">
-                        {product.category}
+                        {product?.category || 'General'}
                     </span>
                     <div className="flex items-center gap-1 text-[12px] font-bold text-gray-700">
                         <Star size={12} className="fill-accent text-accent" />
@@ -101,26 +101,27 @@ const FoodCard = ({ product, onClick }) => {
                 </div>
 
                 <p className="text-[13px] text-text-secondary line-clamp-2 mb-4">
-                    {product.description || `Delicious ${product.name} freshly prepared by our expert chefs.`}
+                    {product?.description || `Delicious ${product?.name || 'dish'} freshly prepared by our expert chefs.`}
                 </p>
                 
                 <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-50">
                     <div className="flex flex-col">
                         <span className="text-[18px] font-bold text-text-primary">
-                            ₹{product.price}
+                            {product?.price === 0 ? 'Market Price' : `₹${product?.price || 0}`}
                         </span>
                     </div>
                     
                     <div className="z-20 relative" onClick={(e) => e.stopPropagation()}>
-                        {!product.isAvailable ? (
-                            <button disabled className="bg-gray-100 text-gray-400 font-semibold px-4 py-2 rounded-xl text-sm cursor-not-allowed">
+                        {!product?.isAvailable ? (
+                            <button type="button" disabled className="bg-gray-100 text-gray-400 font-semibold px-4 py-2 rounded-xl text-sm cursor-not-allowed">
                                 Sold Out
                             </button>
                         ) : cartItem ? (
                             <div className="flex items-center bg-green-50 border border-primary rounded-xl overflow-hidden shadow-sm h-9">
                                 <button 
+                                    type="button"
                                     onClick={(e) => handleQtyChange(e, -1)}
-                                    className="px-3 h-full flex items-center text-primary hover:bg-green-100 transition-colors"
+                                    className="px-3 h-full flex items-center text-primary active:bg-green-200 transition-colors"
                                 >
                                     <Minus size={16} strokeWidth={3} />
                                 </button>
@@ -128,16 +129,18 @@ const FoodCard = ({ product, onClick }) => {
                                     {cartItem.qty}
                                 </span>
                                 <button 
+                                    type="button"
                                     onClick={(e) => handleQtyChange(e, 1)}
-                                    className="px-3 h-full flex items-center text-primary hover:bg-green-100 transition-colors"
+                                    className="px-3 h-full flex items-center text-primary active:bg-green-200 transition-colors"
                                 >
                                     <Plus size={16} strokeWidth={3} />
                                 </button>
                             </div>
                         ) : (
                             <button 
+                                type="button"
                                 onClick={handleAddClick}
-                                className="flex items-center justify-center font-bold px-6 py-2 rounded-xl transition-all active:scale-95 bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                                className="flex items-center justify-center font-bold px-6 py-2 rounded-xl transition-all active:scale-95 bg-primary text-white shadow-sm"
                             >
                                 ADD
                             </button>

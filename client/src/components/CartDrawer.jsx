@@ -77,11 +77,11 @@ const CartDrawer = () => {
                                     <div className="bg-white rounded-[24px] p-4 shadow-sm border border-gray-100">
                                         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
                                             <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-xl font-bold">
-                                                F
+                                                {(selectedRestaurant?.name || 'Grillo calicut').charAt(0).toUpperCase()}
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-text-primary text-[15px]">Friends Hotel & Resort</h3>
-                                                <p className="text-[12px] text-text-secondary">Delivery to your room</p>
+                                                <h3 className="font-bold text-text-primary text-[15px]">{selectedRestaurant?.name || 'Grillo calicut'}</h3>
+                                                <p className="text-[12px] text-text-secondary">Delivery to your table</p>
                                             </div>
                                         </div>
                                         <div className="space-y-1">

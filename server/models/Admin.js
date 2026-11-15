@@ -13,10 +13,9 @@ const adminSchema = mongoose.Schema({
     }
 }, { timestamps: true });
 
-adminSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        next();
-    }
+adminSchema.pre('save', async function () {
+    // Only hash when the password was set/changed — never re-hash an existing hash.
+    if (!this.isModified('password')) return;
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
 });

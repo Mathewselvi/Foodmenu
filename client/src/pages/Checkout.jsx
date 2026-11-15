@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle, Info, Edit2, ShieldCheck, QrCode, Smartphone, C
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import API_URL from '../api';
+import { getServiceCharge } from '../menuMeta';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Checkout = () => {
@@ -18,10 +19,7 @@ const Checkout = () => {
     const { showNotification } = useNotification();
     const { selectedRestaurant } = useRestaurant();
 
-    // Calculate dynamic service charge
-    const serviceCharge = selectedRestaurant 
-        ? (selectedRestaurant.serviceChargeEnabled !== false ? (selectedRestaurant.serviceChargeAmount ?? 500) : 0)
-        : 500;
+    const serviceCharge = getServiceCharge(selectedRestaurant, cartTotal);
 
     const grandTotal = cartTotal + serviceCharge;
 
@@ -58,11 +56,30 @@ const Checkout = () => {
         };
 
         try {
-            await fetch(`${API_URL}/orders`, {
+            const res = await fetch(`${API_URL}/orders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData)
             });
+            if (!res.ok) throw new Error(`Order failed (HTTP ${res.status})`);
+            const created = await res.json().catch(() => ({}));
+
+            // Remember the order on this device so it shows up under "My Orders".
+            try {
+                const saved = JSON.parse(localStorage.getItem('guestOrders') || '[]');
+                const id = created?._id ? `#${String(created._id).slice(-6).toUpperCase()}` : `#${Date.now().toString().slice(-6)}`;
+                saved.unshift({
+                    id,
+                    date: created?.createdAt || new Date().toISOString(),
+                    total: grandTotal,
+                    itemsCount: cartItems.reduce((n, i) => n + i.qty, 0),
+                    items: orderData.items,
+                    status: 'Confirmed'
+                });
+                localStorage.setItem('guestOrders', JSON.stringify(saved.slice(0, 50)));
+            } catch {
+                // storage unavailable — the order itself is already placed
+            }
 
             setIsPlacingOrder(false);
             setFinalAmount(grandTotal);
@@ -136,8 +153,9 @@ const Checkout = () => {
                             
                             <div className="space-y-5">
                                 <div className="relative">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Full Name</label>
+                                    <label htmlFor="guest-name" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Full Name</label>
                                     <input 
+                                        id="guest-name" name="name" autoComplete="name"
                                         type="text"
                                         value={guestName}
                                         onChange={(e) => setGuestName(e.target.value)}
@@ -146,8 +164,9 @@ const Checkout = () => {
                                     />
                                 </div>
                                 <div className="relative">
-                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Email Address</label>
+                                    <label htmlFor="guest-email" className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Email Address</label>
                                     <input 
+                                        id="guest-email" name="email" autoComplete="email"
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -168,7 +187,7 @@ const Checkout = () => {
                                             <span className="bg-gray-100 text-gray-700 font-bold w-6 h-6 rounded-md flex items-center justify-center text-xs">{item.qty}x</span>
                                             <span className="font-medium text-gray-800 group-hover:text-primary transition-colors">{item.name}</span>
                                         </div>
-                                        <span className="font-bold text-gray-900">₹{item.price * item.qty}</span>
+                                        <span className="font-bold text-gray-900 tabular-nums">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
                                     </div>
                                 ))}
                             </div>

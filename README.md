@@ -1,6 +1,6 @@
 # Resort Food Ordering System
 
-A full-stack MERN application for a resort food ordering system. Built with React (Vite), Tailwind CSS, Node.js, Express, and MongoDB.
+A full-stack MERN application for Beyond Heaven Resort's food ordering. Built with React (Vite), Tailwind CSS, Node.js, Express, and MongoDB.
 
 ## Features
 * Modern, responsive interface inspired by nature and resorts
@@ -30,10 +30,13 @@ A full-stack MERN application for a resort food ordering system. Built with Reac
    PORT=5000
    MONGO_URI=mongodb://localhost:27017/resortFoodDB
    ```
-4. Seed the database with sample resort products (optional but recommended):
+4. Load the menu (the only menu this app serves):
    ```bash
-   node seeder.js
+   npm run menu:preview   # print the final price list, no database changes
+   npm run seed:menu      # back up the DB to server/backups/, remove any other menus, load this one
    ```
+   Prices live in `server/seedMenu.js` as the partner's printed-menu price plus a per-category markup
+   (+0 Hot Beverages/Lime/Mojitos, +100 Al-Faham/Mandhi/Tandoor, +60 everything else).
 5. Start the backend server:
    ```bash
    node index.js

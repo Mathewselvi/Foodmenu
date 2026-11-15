@@ -24,12 +24,13 @@ router.get('/', async (req, res) => {
 // @access  Private (Admin only)
 router.post('/', protect, async (req, res) => {
     try {
-        const { name, price, category, isAvailable, restaurant, imageUrl } = req.body;
+        const { name, price, category, isAvailable, isVeg, restaurant, imageUrl } = req.body;
         const product = new Product({
             name,
             price,
             category,
             isAvailable,
+            isVeg,
             restaurant,
             imageUrl
         });
@@ -45,14 +46,16 @@ router.post('/', protect, async (req, res) => {
 // @access  Private (Admin only)
 router.put('/:id', protect, async (req, res) => {
     try {
-        const { name, price, category, isAvailable, restaurant, imageUrl } = req.body;
+        const { name, price, category, isAvailable, isVeg, restaurant, imageUrl } = req.body;
         const product = await Product.findById(req.params.id);
 
         if (product) {
             product.name = name || product.name;
-            product.price = price || product.price;
+            // Allow 0 so seasonal items can be switched back to "Seasonal" pricing
+            if (price !== undefined && price !== '' && !Number.isNaN(Number(price))) product.price = Number(price);
             product.category = category || product.category;
             product.isAvailable = isAvailable !== undefined ? isAvailable : product.isAvailable;
+            if (isVeg !== undefined) product.isVeg = isVeg;
             if (restaurant) product.restaurant = restaurant;
             if (imageUrl !== undefined) product.imageUrl = imageUrl;
 

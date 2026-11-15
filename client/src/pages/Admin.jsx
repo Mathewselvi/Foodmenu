@@ -3,7 +3,8 @@ import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Edit, X, Trash2, Check, Utensils, Settings, Shield, LogOut, Menu as MenuIcon, ClipboardList, Home, LayoutDashboard, TrendingUp, DollarSign, Activity, Package, ExternalLink, ChevronDown, CheckCircle2, AlertCircle, MapPin } from 'lucide-react';
-import API_URL, { getFullImageUrl } from '../api';
+import API_URL, { adminFetch } from '../api';
+import { CATEGORY_KEYS, getProductImage } from '../menuMeta';
 import Orders from './Orders';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,7 +13,7 @@ const Admin = () => {
     const { selectedRestaurant, restaurants, changeRestaurant, setRestaurants } = useRestaurant();
     const [products, setProducts] = useState([]);
     const [formData, setFormData] = useState({
-        name: '', price: '', category: 'BEVERAGES', isAvailable: true, imageUrl: ''
+        name: '', price: '', category: 'STARTERS', isAvailable: true, isVeg: null, imageUrl: ''
     });
     const [restaurantFormData, setRestaurantFormData] = useState({ name: '' });
     const [restaurantEditId, setRestaurantEditId] = useState(null);
@@ -46,19 +47,16 @@ const Admin = () => {
         setSelectedIds([]);
     }, [searchQuery, selectedRestaurant]);
 
-    const categories = [
-        'BEVERAGES', 'SANDWICH', 'BREAKFAST', 'SHORT BITES', 'SOUPS', 
-        'SALADS', 'EGG BASKET', 'RICE / MEALS', 'RAITA', 'ROTIS', 
-        'BIRIYANI', 'FRIED RICE', 'NOODLES', 'VEG CURRY', 'BEEF', 
-        'MUTTON', 'TANDOORI', 'SHAWARMA', 'SHAWAYA', 'MASALA SHAWAYA', 
-        'CHICKEN SPECIAL', 'ALFAHAM', 'LIME JUICE', 'FRESH PULP', 
-        'SIGNATURE', 'LASSI', 'MILKSHAKE', 'SUNDAES', 'COOL DRINKS'
-    ];
+    // Menu categories first, plus any custom ones already used by items.
+    const categories = useMemo(
+        () => [...CATEGORY_KEYS, ...[...new Set(products.map((p) => p.category))].filter((c) => c && !CATEGORY_KEYS.includes(c))],
+        [products]
+    );
 
     const fetchProducts = async () => {
         if (!selectedRestaurant) return;
         try {
-            const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
+            const res = await adminFetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
             if (!res.ok) throw new Error('Fetch failed');
             const data = await res.json();
             setProducts(Array.isArray(data) ? data : []);
@@ -70,7 +68,7 @@ const Admin = () => {
 
     const fetchRestaurants = async () => {
         try {
-            const res = await fetch(`${API_URL}/restaurants`);
+            const res = await adminFetch(`${API_URL}/restaurants`);
             if (res.ok) {
                 const data = await res.json();
                 setRestaurants(Array.isArray(data) ? data : []);
@@ -91,7 +89,8 @@ const Admin = () => {
     }, [selectedRestaurant]);
 
     const handleChange = (e) => {
-        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        let value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        if (e.target.name === 'isVeg') value = value === 'veg' ? true : value === 'nonveg' ? false : null;
         setFormData({ ...formData, [e.target.name]: value });
     };
 
@@ -102,7 +101,7 @@ const Admin = () => {
             const method = editId ? 'PUT' : 'POST';
             const payload = { ...formData, restaurant: selectedRestaurant._id };
 
-            const res = await fetch(url, {
+            const res = await adminFetch(url, {
                 method,
                 headers: authHeaders,
                 body: JSON.stringify(payload)
@@ -111,7 +110,7 @@ const Admin = () => {
             if (!res.ok) throw new Error('Save failed');
 
             showNotification(editId ? 'Item updated successfully!' : 'New item added!');
-            setFormData({ name: '', price: '', category: 'BEVERAGES', isAvailable: true, imageUrl: '' });
+            setFormData({ name: '', price: '', category: 'STARTERS', isAvailable: true, isVeg: null, imageUrl: '' });
             setEditId(null);
             fetchProducts();
         } catch (error) {
@@ -129,7 +128,7 @@ const Admin = () => {
 
         setIsUploading(true);
         try {
-            const res = await fetch(`${API_URL}/upload`, {
+            const res = await adminFetch(`${API_URL}/upload`, {
                 method: 'POST',
                 body: uploadData
             });
@@ -156,7 +155,7 @@ const Admin = () => {
     const handleDelete = async (id) => {
         if(window.confirm('Are you sure you want to delete this item?')) {
             try {
-                const res = await fetch(`${API_URL}/products/${id}`, { 
+                const res = await adminFetch(`${API_URL}/products/${id}`, { 
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
                 });
@@ -172,7 +171,7 @@ const Admin = () => {
 
     const toggleAvailability = async (product) => {
         try {
-            const res = await fetch(`${API_URL}/products/${product._id}`, {
+            const res = await adminFetch(`${API_URL}/products/${product._id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ ...product, isAvailable: !product.isAvailable })
@@ -192,7 +191,7 @@ const Admin = () => {
             const url = restaurantEditId ? `${API_URL}/restaurants/${restaurantEditId}` : `${API_URL}/restaurants`;
             const method = restaurantEditId ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await adminFetch(url, {
                 method,
                 headers: authHeaders,
                 body: JSON.stringify(restaurantFormData)
@@ -218,7 +217,7 @@ const Admin = () => {
     const toggleRestaurantStatus = async (restaurant) => {
         try {
             const currentStatus = restaurant.isActive !== false;
-            const res = await fetch(`${API_URL}/restaurants/${restaurant._id}`, {
+            const res = await adminFetch(`${API_URL}/restaurants/${restaurant._id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ isActive: !currentStatus })
@@ -235,7 +234,7 @@ const Admin = () => {
     const handleRestaurantDelete = async (id) => {
         if(window.confirm('Are you sure you want to delete this restaurant? This might orphan some products/orders.')) {
             try {
-                const res = await fetch(`${API_URL}/restaurants/${id}`, { 
+                const res = await adminFetch(`${API_URL}/restaurants/${id}`, { 
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
                 });
@@ -256,7 +255,7 @@ const Admin = () => {
         e.preventDefault();
         if (!selectedRestaurant) return;
         try {
-            const res = await fetch(`${API_URL}/restaurants/${selectedRestaurant._id}`, {
+            const res = await adminFetch(`${API_URL}/restaurants/${selectedRestaurant._id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ 
@@ -295,7 +294,7 @@ const Admin = () => {
         if (selectedIds.length === 0) return;
         if (window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`)) {
             try {
-                await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, { 
+                await Promise.all(selectedIds.map(id => adminFetch(`${API_URL}/products/${id}`, { 
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
                 })));
@@ -312,7 +311,7 @@ const Admin = () => {
     const handleBulkAvailability = async (isAvailable) => {
         if (selectedIds.length === 0) return;
         try {
-            await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, {
+            await Promise.all(selectedIds.map(id => adminFetch(`${API_URL}/products/${id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ isAvailable })
@@ -329,7 +328,7 @@ const Admin = () => {
     const handleBulkCategoryChange = async () => {
         if (selectedIds.length === 0 || !bulkCategory) return;
         try {
-            await Promise.all(selectedIds.map(id => fetch(`${API_URL}/products/${id}`, {
+            await Promise.all(selectedIds.map(id => adminFetch(`${API_URL}/products/${id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ category: bulkCategory })
@@ -352,7 +351,7 @@ const Admin = () => {
     const handleChangePassword = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${API_URL}/admin/change-password`, {
+            const res = await adminFetch(`${API_URL}/admin/change-password`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify(passwordData)
@@ -465,6 +464,7 @@ const Admin = () => {
                         </div>
                         <div className="relative">
                             <select 
+                                id="admin-property" name="property" aria-label="Property"
                                 value={selectedRestaurant?._id || ''} 
                                 onChange={(e) => {
                                     const rest = restaurants.find(r => r._id === e.target.value);
@@ -533,7 +533,7 @@ const Admin = () => {
                                                 <h3 className="text-lg font-bold text-gray-900">Revenue Analytics</h3>
                                                 <p className="text-xs text-gray-400 font-medium mt-1">Daily income over the past week</p>
                                             </div>
-                                            <select className="bg-gray-50 border border-gray-200 text-sm font-bold text-gray-700 rounded-xl px-4 py-2 outline-none hover:bg-gray-100 transition-colors cursor-pointer">
+                                            <select name="statsRange" aria-label="Time range" className="bg-gray-50 border border-gray-200 text-sm font-bold text-gray-700 rounded-xl px-4 py-2 outline-none hover:bg-gray-100 transition-colors cursor-pointer">
                                                 <option>This Week</option>
                                                 <option>This Month</option>
                                             </select>
@@ -561,7 +561,7 @@ const Admin = () => {
                                             {products.slice(0, 5).map((p, i) => (
                                                 <div key={i} className="flex items-center gap-4 group">
                                                     <div className="w-14 h-14 bg-gray-100 rounded-2xl overflow-hidden shrink-0 shadow-inner group-hover:shadow-md transition-shadow">
-                                                        <img src={`https://source.unsplash.com/100x100/?food,${p.category}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                                                        <img src={getProductImage(p)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-bold text-sm text-gray-900 truncate group-hover:text-primary transition-colors">{p.name}</p>
@@ -616,25 +616,28 @@ const Admin = () => {
                                             <form onSubmit={handleSubmit} className="relative z-10">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                                     <div className="relative">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Item Name</label>
+                                                        <label htmlFor="item-name" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Item Name</label>
                                                         <input 
+                                                            id="item-name" autoComplete="off"
                                                             name="name" value={formData.name} onChange={handleChange} 
                                                             placeholder="e.g. Chicken Biriyani" required 
                                                             className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 placeholder-gray-400" 
                                                         />
                                                     </div>
                                                     <div className="relative">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Price (₹)</label>
+                                                        <label htmlFor="item-price" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Price (₹)</label>
                                                         <input 
+                                                            id="item-price"
                                                             name="price" type="number" value={formData.price} onChange={handleChange} 
-                                                            placeholder="0.00" required 
+                                                            placeholder="0 = seasonal" required min="0" 
                                                             className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 placeholder-gray-400" 
                                                         />
                                                     </div>
                                                     <div className="relative">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Category</label>
+                                                        <label htmlFor="item-category" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Category</label>
                                                         <div className="relative">
                                                             <select 
+                                                                id="item-category"
                                                                 name="category" value={formData.category} onChange={handleChange} 
                                                                 className="w-full appearance-none px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 cursor-pointer"
                                                             >
@@ -644,10 +647,28 @@ const Admin = () => {
                                                         </div>
                                                     </div>
                                                     <div className="relative">
-                                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Image (Upload or URL)</label>
+                                                        <label htmlFor="item-veg" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Veg / Non-Veg</label>
+                                                        <div className="relative">
+                                                            <select
+                                                                id="item-veg"
+                                                                name="isVeg"
+                                                                value={formData.isVeg === true ? 'veg' : formData.isVeg === false ? 'nonveg' : 'none'}
+                                                                onChange={handleChange}
+                                                                className="w-full appearance-none px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 cursor-pointer"
+                                                            >
+                                                                <option value="veg">Veg</option>
+                                                                <option value="nonveg">Non-Veg</option>
+                                                                <option value="none">Not shown (drinks etc.)</option>
+                                                            </select>
+                                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <label htmlFor="item-image" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Image (Upload or URL)</label>
                                                         <div className="flex items-center gap-3">
                                                             <div className="relative flex-1">
                                                                 <input 
+                                                                    id="item-image" autoComplete="off"
                                                                     name="imageUrl" value={formData.imageUrl || ''} onChange={handleChange} 
                                                                     placeholder="e.g. https://example.com/image.jpg" 
                                                                     className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-gray-900 placeholder-gray-400" 
@@ -656,6 +677,8 @@ const Admin = () => {
                                                             <div className="relative shrink-0">
                                                                 <input 
                                                                     type="file" 
+                                                                    name="imageFile"
+                                                                    aria-label="Upload image"
                                                                     accept="image/*"
                                                                     onChange={handleImageUpload}
                                                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -684,7 +707,7 @@ const Admin = () => {
                                                     
                                                     <div className="flex items-center gap-3 w-full sm:w-auto">
                                                         {editId && (
-                                                            <button type="button" onClick={() => { setEditId(null); setFormData({ name: '', price: '', category: 'BEVERAGES', isAvailable: true, imageUrl: '' })}} className="flex-1 sm:flex-none bg-white border border-gray-200 text-gray-700 px-8 py-3.5 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95">
+                                                            <button type="button" onClick={() => { setEditId(null); setFormData({ name: '', price: '', category: 'STARTERS', isAvailable: true, isVeg: null, imageUrl: '' })}} className="flex-1 sm:flex-none bg-white border border-gray-200 text-gray-700 px-8 py-3.5 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95">
                                                                 Cancel
                                                             </button>
                                                         )}
@@ -708,7 +731,9 @@ const Admin = () => {
                                                     <Search size={18} className="text-gray-400" />
                                                 </div>
                                                 <input
-                                                    type="text"
+                                                    type="search"
+                                                    name="productSearch"
+                                                    aria-label="Search dishes or categories"
                                                     placeholder="Search dishes or categories..."
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -738,7 +763,7 @@ const Admin = () => {
                                                         
                                                         <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1">
                                                             <div className="relative">
-                                                                <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="appearance-none px-4 pr-8 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl outline-none text-xs font-bold cursor-pointer transition-all">
+                                                                <select name="bulkCategory" aria-label="Move selected items to category" value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="appearance-none px-4 pr-8 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl outline-none text-xs font-bold cursor-pointer transition-all">
                                                                     <option value="" disabled className="text-gray-900">Move to Category...</option>
                                                                     {categories.map(cat => <option key={cat} value={cat} className="text-gray-900">{cat}</option>)}
                                                                 </select>
@@ -784,7 +809,7 @@ const Admin = () => {
                                                                     <td className="px-6 py-4">
                                                                         <div className="flex items-center gap-3">
                                                                             <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shadow-inner">
-                                                                                <img src={getFullImageUrl(product.imageUrl) || `https://source.unsplash.com/100x100/?food,${product.category}`} className="w-full h-full object-cover" alt="" />
+                                                                                <img src={getProductImage(product)} className="w-full h-full object-cover" alt="" />
                                                                             </div>
                                                                             <span className="font-bold text-gray-900 text-[15px] group-hover:text-primary transition-colors">{product.name}</span>
                                                                         </div>
@@ -846,8 +871,9 @@ const Admin = () => {
 
                                     <form onSubmit={handleRestaurantSubmit} className="flex flex-col sm:flex-row gap-4 mb-10 bg-slate-50 p-6 rounded-[24px] border border-slate-100">
                                         <div className="flex-1 relative">
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Property Name</label>
+                                            <label htmlFor="property-name" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Property Name</label>
                                             <input 
+                                                id="property-name" autoComplete="off"
                                                 name="name" value={restaurantFormData.name} onChange={(e) => setRestaurantFormData({ name: e.target.value })} 
                                                 placeholder="e.g., Resort Beyond Heaven Wayanad" required 
                                                 className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-gray-900" 
@@ -910,8 +936,8 @@ const Admin = () => {
                                         
                                         <form onSubmit={handleServiceChargeSubmit} className="flex flex-col sm:flex-row items-end gap-5 relative z-10">
                                             <div className="flex flex-col flex-1 w-full relative">
-                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Fee Status</label>
-                                                <div className="flex items-center gap-3 bg-white px-5 py-4 rounded-2xl border border-orange-100 w-full cursor-pointer shadow-sm hover:border-orange-300 transition-colors" onClick={() => setServiceChargeData({ ...serviceChargeData, enabled: !serviceChargeData.enabled })}>
+                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Fee Status</span>
+                                                <div role="switch" aria-checked={serviceChargeData.enabled} aria-label="Enable additional fees" tabIndex={0} onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setServiceChargeData({ ...serviceChargeData, enabled: !serviceChargeData.enabled }); } }} className="flex items-center gap-3 bg-white px-5 py-4 rounded-2xl border border-orange-100 w-full cursor-pointer shadow-sm hover:border-orange-300 transition-colors" onClick={() => setServiceChargeData({ ...serviceChargeData, enabled: !serviceChargeData.enabled })}>
                                                     <div className={`w-12 h-6 rounded-full transition-colors relative ${serviceChargeData.enabled ? 'bg-orange-500' : 'bg-gray-300'}`}>
                                                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${serviceChargeData.enabled ? 'left-7' : 'left-1'}`}></div>
                                                     </div>
@@ -919,8 +945,9 @@ const Admin = () => {
                                                 </div>
                                             </div>
                                             <div className="flex flex-col flex-1 w-full relative">
-                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Fixed Amount (₹)</label>
+                                                <label htmlFor="fee-amount" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Fixed Amount (₹)</label>
                                                 <input 
+                                                    id="fee-amount" name="feeAmount"
                                                     type="number" 
                                                     value={serviceChargeData.amount} 
                                                     onChange={(e) => setServiceChargeData({ ...serviceChargeData, amount: Number(e.target.value) })} 
@@ -956,8 +983,9 @@ const Admin = () => {
                                     
                                     <form onSubmit={handleChangePassword} className="flex flex-col gap-6 relative z-10">
                                         <div className="relative">
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Current Password</label>
+                                            <label htmlFor="current-password" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">Current Password</label>
                                             <input 
+                                                id="current-password" autoComplete="current-password"
                                                 type="password" name="currentPassword" value={passwordData.currentPassword} 
                                                 onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} 
                                                 placeholder="Enter your current password" required 
@@ -965,8 +993,9 @@ const Admin = () => {
                                             />
                                         </div>
                                         <div className="relative">
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">New Password</label>
+                                            <label htmlFor="new-password" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block">New Password</label>
                                             <input 
+                                                id="new-password" autoComplete="new-password"
                                                 type="password" name="newPassword" value={passwordData.newPassword} 
                                                 onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} 
                                                 placeholder="Create a strong new password" required 

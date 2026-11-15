@@ -1,23 +1,28 @@
 import { useCart } from '../context/CartContext';
-import { X, ArrowLeft, Percent, FileText, Plus } from 'lucide-react';
+import { ArrowLeft, FileText, Plus } from 'lucide-react';
 import { useRestaurant } from '../context/RestaurantContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import CartItem from './CartItem';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { BRAND_NAME, getServiceCharge } from '../menuMeta';
 
 const CartDrawer = () => {
     const { isCartOpen, setIsCartOpen, cartItems, cartTotal } = useCart();
-    const [couponCode, setCouponCode] = useState('');
     const navigate = useNavigate();
 
     const { selectedRestaurant } = useRestaurant();
 
     // Actual charges based on restaurant settings
-    const serviceFee = (selectedRestaurant?.serviceChargeEnabled !== false && cartTotal > 0) 
-        ? (selectedRestaurant?.serviceChargeAmount || 500) 
-        : 0;
+    const serviceFee = getServiceCharge(selectedRestaurant, cartTotal);
     const grandTotal = cartTotal + serviceFee;
+
+    useEffect(() => {
+        if (!isCartOpen) return;
+        const onKey = (e) => e.key === 'Escape' && setIsCartOpen(false);
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isCartOpen, setIsCartOpen]);
 
     const handleCheckoutClick = () => {
         setIsCartOpen(false);
@@ -40,12 +45,16 @@ const CartDrawer = () => {
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Your cart"
                         className="fixed inset-y-0 right-0 w-full md:max-w-md bg-background shadow-2xl z-[60] flex flex-col"
                     >
                         {/* Header */}
                         <div className="px-4 py-4 border-b border-gray-100 flex items-center bg-white sticky top-0 z-10 shadow-sm">
                             <button 
                                 onClick={() => setIsCartOpen(false)}
+                                aria-label="Close cart"
                                 className="p-2 text-text-primary hover:bg-gray-100 rounded-full mr-3 transition-colors"
                             >
                                 <ArrowLeft size={24} />
@@ -77,11 +86,11 @@ const CartDrawer = () => {
                                     <div className="bg-white rounded-[24px] p-4 shadow-sm border border-gray-100">
                                         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
                                             <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-xl font-bold">
-                                                {(selectedRestaurant?.name || 'Grillo calicut').charAt(0).toUpperCase()}
+                                                {BRAND_NAME.charAt(0).toUpperCase()}
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-text-primary text-[15px]">{selectedRestaurant?.name || 'Grillo calicut'}</h3>
-                                                <p className="text-[12px] text-text-secondary">Delivery to your table</p>
+                                                <h3 className="font-bold text-text-primary text-[15px]">{BRAND_NAME}</h3>
+                                                <p className="text-[12px] text-text-secondary">Delivered to your room · 15–20 min</p>
                                             </div>
                                         </div>
                                         <div className="space-y-1">
@@ -96,18 +105,6 @@ const CartDrawer = () => {
                                         >
                                             <Plus size={18} /> Add more items
                                         </button>
-                                    </div>
-
-                                    {/* Offers Section */}
-                                    <div className="bg-white rounded-[24px] p-4 shadow-sm border border-gray-100 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow">
-                                        <div className="bg-blue-50 p-2 rounded-full">
-                                            <Percent size={20} className="text-blue-600" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-text-primary text-sm">Apply Coupon</h4>
-                                            <p className="text-xs text-text-secondary">Avail exciting discounts</p>
-                                        </div>
-                                        <ChevronRightIcon />
                                     </div>
 
                                     {/* Bill Details */}

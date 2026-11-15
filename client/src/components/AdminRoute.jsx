@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import API_URL from '../api';
+import { useState, useEffect } from 'react';
+import API_URL, { adminFetch, ADMIN_SESSION_EXPIRED } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import { Shield, Lock, User, ArrowRight } from 'lucide-react';
 
@@ -7,9 +7,38 @@ const AdminRoute = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         return !!localStorage.getItem('adminToken');
     });
+    // A saved token is only trusted after the server confirms it (it may be expired or
+    // issued by a different server, e.g. the live site).
+    const [isChecking, setIsChecking] = useState(() => !!localStorage.getItem('adminToken'));
     const [loginData, setLoginData] = useState({ username: '', password: '' });
     const { showNotification } = useNotification();
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const onExpired = () => {
+            setIsAuthenticated(false);
+            setIsChecking(false);
+            showNotification('Your admin session has expired. Please log in again.', 'error');
+        };
+        window.addEventListener(ADMIN_SESSION_EXPIRED, onExpired);
+        return () => window.removeEventListener(ADMIN_SESSION_EXPIRED, onExpired);
+    }, [showNotification]);
+
+    useEffect(() => {
+        if (!localStorage.getItem('adminToken')) return;
+        let cancelled = false;
+        adminFetch(`${API_URL}/admin/verify`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (data && data.valid === false) {
+                    localStorage.removeItem('adminToken');
+                    window.dispatchEvent(new Event(ADMIN_SESSION_EXPIRED));
+                }
+            })
+            .catch(() => null) // server unreachable: let the dashboard show its own connection errors
+            .finally(() => { if (!cancelled) setIsChecking(false); });
+        return () => { cancelled = true; };
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -28,12 +57,20 @@ const AdminRoute = ({ children }) => {
             } else {
                 showNotification(data.message || 'Login failed', 'error');
             }
-        } catch (error) {
+        } catch {
             showNotification('Server error', 'error');
         } finally {
             setIsLoading(false);
         }
     };
+
+    if (isAuthenticated && isChecking) {
+        return (
+            <div className="bg-background min-h-screen flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     if (!isAuthenticated) {
         return (
@@ -62,6 +99,7 @@ const AdminRoute = ({ children }) => {
                                     <User className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
+                                    id="admin-username" autoComplete="username" aria-label="Admin username"
                                     name="username"
                                     type="text"
                                     required
@@ -77,6 +115,7 @@ const AdminRoute = ({ children }) => {
                                     <Lock className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
+                                    id="admin-password" autoComplete="current-password" aria-label="Password"
                                     name="password"
                                     type="password"
                                     required

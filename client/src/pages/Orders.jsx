@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Clock, Printer, Edit, Plus, Minus, X, Search, ShoppingBag, Activity, CheckCircle2, XCircle, TrendingUp, DollarSign, MoreVertical } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
-import API_URL from '../api';
+import API_URL, { adminFetch } from '../api';
 
 const Orders = ({ isEmbedded = false }) => {
     const { showNotification } = useNotification();
@@ -35,7 +35,7 @@ const Orders = ({ isEmbedded = false }) => {
     const fetchProducts = async () => {
         if (!selectedRestaurant) return;
         try {
-            const res = await fetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
+            const res = await adminFetch(`${API_URL}/products?restaurantId=${selectedRestaurant._id}`);
             if (res.ok) {
                 const data = await res.json();
                 setProducts(data);
@@ -53,7 +53,7 @@ const Orders = ({ isEmbedded = false }) => {
         }
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/orders?restaurantId=${selectedRestaurant._id}`, {
+            const res = await adminFetch(`${API_URL}/orders?restaurantId=${selectedRestaurant._id}`, {
                 headers: authHeaderOnly
             });
             if (!res.ok) throw new Error('Fetch failed');
@@ -78,7 +78,7 @@ const Orders = ({ isEmbedded = false }) => {
 
     const handleSaveOrder = async () => {
         try {
-            const res = await fetch(`${API_URL}/orders/${editingOrder._id}`, {
+            const res = await adminFetch(`${API_URL}/orders/${editingOrder._id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({
@@ -131,7 +131,7 @@ const Orders = ({ isEmbedded = false }) => {
 
     const updateStatus = async (id, status) => {
         try {
-            const res = await fetch(`${API_URL}/orders/${id}`, {
+            const res = await adminFetch(`${API_URL}/orders/${id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ status })
@@ -147,7 +147,7 @@ const Orders = ({ isEmbedded = false }) => {
 
     const markPaymentReceived = async (id) => {
         try {
-            const res = await fetch(`${API_URL}/orders/${id}/payment`, {
+            const res = await adminFetch(`${API_URL}/orders/${id}/payment`, {
                 method: 'PUT',
                 headers: authHeaderOnly
             });
@@ -163,7 +163,7 @@ const Orders = ({ isEmbedded = false }) => {
     const deleteOrder = async (id) => {
         if (window.confirm('Are you sure you want to delete this order records?')) {
             try {
-                const res = await fetch(`${API_URL}/orders/${id}`, {
+                const res = await adminFetch(`${API_URL}/orders/${id}`, {
                     method: 'DELETE',
                     headers: authHeaderOnly
                 });
@@ -330,8 +330,9 @@ const Orders = ({ isEmbedded = false }) => {
                         </div>
                         
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
-                            <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">Viewing Orders For:</label>
+                            <label htmlFor="orders-property" className="text-sm font-semibold text-gray-700 whitespace-nowrap">Viewing Orders For:</label>
                             <select 
+                                id="orders-property" name="property"
                                 value={selectedRestaurant?._id || ''} 
                                 onChange={(e) => {
                                     const rest = restaurants.find(r => r._id === e.target.value);
@@ -642,7 +643,9 @@ const Orders = ({ isEmbedded = false }) => {
                                         <Search size={16} className="text-gray-400" />
                                     </div>
                                     <input
-                                        type="text"
+                                        type="search"
+                                        name="menuSearch"
+                                        aria-label="Search menu"
                                         placeholder="Search menu..."
                                         value={editSearchQuery}
                                         onChange={(e) => setEditSearchQuery(e.target.value)}

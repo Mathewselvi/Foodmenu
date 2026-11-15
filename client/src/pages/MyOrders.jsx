@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 const MyOrders = () => {
     const [orders, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState('All'); // All, Active, Completed, Cancelled
+    const [openId, setOpenId] = useState(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -121,10 +122,27 @@ const MyOrders = () => {
                                             {order.status}
                                         </span>
                                     </div>
-                                    <button className="text-primary text-sm font-bold bg-primary/10 px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors">
-                                        View Details
-                                    </button>
+                                    {Array.isArray(order.items) && order.items.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setOpenId(openId === order.id ? null : order.id)}
+                                            aria-expanded={openId === order.id}
+                                            className="text-primary text-sm font-bold bg-primary/10 px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors"
+                                        >
+                                            {openId === order.id ? 'Hide Details' : 'View Details'}
+                                        </button>
+                                    )}
                                 </div>
+                                {openId === order.id && (
+                                    <ul className="mt-4 space-y-2 text-sm">
+                                        {order.items.map((item, i) => (
+                                            <li key={i} className="flex justify-between gap-4">
+                                                <span className="text-text-primary">{item.qty} × {item.name}</span>
+                                                <span className="font-semibold text-text-primary tabular-nums">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </motion.div>
                         ))}
                     </div>

@@ -23,6 +23,11 @@ const productSchema = mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        // true = veg, false = non-veg, null = no marker (drinks, or not specified)
+        isVeg: {
+            type: Boolean,
+            default: null,
+        },
         restaurant: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Restaurant',

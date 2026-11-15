@@ -70,3 +70,6 @@ input[type=number] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Bottom padding that clears the iPhone home indicator */
+.pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }

@@ -41,6 +41,20 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// @desc    Check whether a saved admin token is still valid (expired, or issued by another server)
+// @route   GET /api/admin/verify
+// Answers 200 { valid } rather than 401 so a stale token doesn't show up as a console error.
+router.get('/verify', (req, res) => {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    try {
+        jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        res.json({ valid: true });
+    } catch {
+        res.json({ valid: false });
+    }
+});
+
 // @desc    Change password
 // @route   PUT /api/admin/change-password
 router.put('/change-password', protect, async (req, res) => {
@@ -54,7 +68,8 @@ router.put('/change-password', protect, async (req, res) => {
             await admin.save();
             res.json({ message: 'Password updated successfully' });
         } else {
-            res.status(401).json({ message: 'Invalid current password' });
+            // 400, not 401: a wrong current password must not end the admin session
+            res.status(400).json({ message: 'Invalid current password' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });

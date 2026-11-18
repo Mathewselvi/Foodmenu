@@ -35,6 +35,15 @@ const orderSchema = mongoose.Schema(
             enum: ['Pending', 'Received'],
             default: 'Pending',
         },
+        // Set when the bill PDF was emailed to the guest
+        billSentAt: {
+            type: Date,
+            default: null,
+        },
+        billSentTo: {
+            type: String,
+            default: '',
+        },
         restaurant: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Restaurant',

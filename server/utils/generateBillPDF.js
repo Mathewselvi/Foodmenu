@@ -12,6 +12,8 @@ const generateBillPDF = (order) => {
                 resolve(pdfData);
             });
 
+            const isPaid = order.paymentStatus === 'Received';
+
             // Theme colors
             const brandColor = '#059669'; // Emerald Green
             const darkColor = '#1f2937'; // Gray 800
@@ -34,12 +36,12 @@ const generateBillPDF = (order) => {
             doc.fillColor(darkColor)
                .fontSize(22)
                .font('Helvetica-Bold')
-               .text('RECEIPT', 400, 50, { align: 'right' });
+               .text(isPaid ? 'RECEIPT' : 'BILL', 400, 50, { align: 'right' });
 
             doc.fillColor(lightColor)
                .fontSize(10)
                .font('Helvetica')
-               .text(`Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`, 400, 80, { align: 'right' })
+               .text(`Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })}`, 400, 80, { align: 'right' })
                .text(`Order ID: #${order._id.toString().slice(-6).toUpperCase()}`, 400, 95, { align: 'right' });
 
             // Header Divider
@@ -90,7 +92,7 @@ const generateBillPDF = (order) => {
 
             // Service Fee Row (dynamic)
             if (order.serviceCharge && order.serviceCharge > 0) {
-                doc.fillColor(lightColor).text('Service Fee / Delivery', 60, y);
+                doc.fillColor(lightColor).text('Room Service Fee', 60, y);
                 doc.text('-', 350, y, { width: 40, align: 'center' });
                 doc.text('-', 400, y, { width: 60, align: 'right' });
                 doc.text(`Rs. ${order.serviceCharge}`, 470, y, { width: 65, align: 'right' });
@@ -106,7 +108,7 @@ const generateBillPDF = (order) => {
             doc.fillColor(darkColor)
                .fontSize(14)
                .font('Helvetica-Bold')
-               .text('Total Paid:', 340, y + 15, { width: 80, align: 'left' });
+               .text(isPaid ? 'Total Paid:' : 'Total:', 340, y + 15, { width: 80, align: 'left' });
                
             doc.fillColor(brandColor)
                .fontSize(16)
@@ -120,7 +122,7 @@ const generateBillPDF = (order) => {
                .fontSize(10)
                .font('Helvetica')
                .text('Thank you for choosing Resort Beyond Heaven!', 50, footerY + 15, { align: 'center' })
-               .text('If you have any questions about this receipt, please contact us.', 50, footerY + 30, { align: 'center' });
+               .text(`If you have any questions about this ${isPaid ? 'receipt' : 'bill'}, please contact us.`, 50, footerY + 30, { align: 'center' });
 
             doc.end();
         } catch (error) {

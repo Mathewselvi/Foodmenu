@@ -1,11 +1,12 @@
 const nodemailer = require('nodemailer');
 
+// Returns true when the email was accepted by the mail server, false otherwise (never throws).
 const sendEmail = async (options) => {
     try {
         // Only send if credentials exist
         if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
             console.warn('SMTP credentials not configured. Skipping email send.');
-            return;
+            return false;
         }
 
         const transporter = nodemailer.createTransport({
@@ -26,8 +27,10 @@ const sendEmail = async (options) => {
 
         const info = await transporter.sendMail(mailOptions);
         console.log(`Email sent: ${info.messageId}`);
+        return true;
     } catch (error) {
         console.error(`Error sending email: ${error}`);
+        return false;
     }
 };
 

@@ -3,6 +3,7 @@ const Order = require('../models/Order');
 const { protect } = require('../middleware/authMiddleware');
 const sendEmail = require('../utils/sendEmail');
 const generateBillPDF = require('../utils/generateBillPDF');
+const sendBill = require('../utils/sendBill');
 const router = express.Router();
 
 // @desc    Create new order
@@ -89,6 +90,7 @@ router.put('/:id', protect, async (req, res) => {
         const order = await Order.findById(req.params.id);
 
         if (order) {
+            const wasCompleted = order.status === 'Completed';
             order.status = req.body.status || order.status;
             if (req.body.items) {
                 order.items = req.body.items;
@@ -96,8 +98,21 @@ router.put('/:id', protect, async (req, res) => {
             if (req.body.totalAmount) {
                 order.totalAmount = req.body.totalAmount;
             }
-            const updatedOrder = await order.save();
-            res.json(updatedOrder);
+            let updatedOrder = await order.save();
+
+            // Marking an order Completed emails the final bill to the guest automatically.
+            // (Awaited so it finishes before the response — required on Vercel.)
+            let billEmail;
+            if (!wasCompleted && updatedOrder.status === 'Completed') {
+                billEmail = await sendBill(updatedOrder);
+                if (billEmail.sent) {
+                    updatedOrder.billSentAt = new Date();
+                    updatedOrder.billSentTo = billEmail.to;
+                    updatedOrder = await updatedOrder.save();
+                }
+            }
+
+            res.json(billEmail ? { ...updatedOrder.toObject(), billEmail } : updatedOrder);
         } else {
             res.status(404).json({ message: 'Order not found' });
         }
@@ -140,7 +155,7 @@ router.put('/:id/payment', protect, async (req, res) => {
                 </div>
             `;
 
-            await sendEmail({
+            const sent = await sendEmail({
                 to: order.email,
                 subject: 'Payment Received & Bill - Resort Beyond Heaven',
                 html: emailHtml,
@@ -153,12 +168,40 @@ router.put('/:id/payment', protect, async (req, res) => {
                 ]
             });
 
+            if (sent) {
+                updatedOrder.billSentAt = new Date();
+                updatedOrder.billSentTo = order.email;
+                await updatedOrder.save();
+            }
+
             res.json(updatedOrder);
         } else {
             res.status(404).json({ message: 'Order not found' });
         }
     } catch (error) {
         console.error('Payment Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @desc    (Re)send the bill email for an order
+// @route   POST /api/orders/:id/send-bill
+// @access  Private
+router.post('/:id/send-bill', protect, async (req, res) => {
+    try {
+        let order = await Order.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+        const billEmail = await sendBill(order);
+        if (billEmail.sent) {
+            order.billSentAt = new Date();
+            order.billSentTo = billEmail.to;
+            order = await order.save();
+        }
+        res.json({ ...order.toObject(), billEmail });
+    } catch (error) {
+        console.error('Send Bill Error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 });

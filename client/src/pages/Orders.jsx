@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, Printer, Edit, Plus, Minus, X, Search, ShoppingBag, Activity, CheckCircle2, XCircle, TrendingUp, DollarSign, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Clock, Printer, Edit, Plus, Minus, X, Search, ShoppingBag, Activity, CheckCircle2, XCircle, TrendingUp, DollarSign, MoreVertical, Mail, MailCheck } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { useRestaurant } from '../context/RestaurantContext';
 import API_URL, { adminFetch } from '../api';
@@ -13,6 +13,7 @@ const Orders = ({ isEmbedded = false }) => {
     const [editingOrder, setEditingOrder] = useState(null);
     const [products, setProducts] = useState([]);
     const [editSearchQuery, setEditSearchQuery] = useState('');
+    const [busyId, setBusyId] = useState(null); // order being completed / emailed
 
     const authHeaders = {
         'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ const Orders = ({ isEmbedded = false }) => {
                 }
             }
             
-            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + 500;
+            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + (Number(prev.serviceCharge) || 0);
             return { ...prev, items: newItems, totalAmount: newTotal };
         });
     };
@@ -124,24 +125,63 @@ const Orders = ({ isEmbedded = false }) => {
                 newItems.push({ name: product.name, price: product.price, qty: 1 });
             }
             
-            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + 500;
+            const newTotal = newItems.reduce((sum, item) => sum + (item.price * item.qty), 0) + (Number(prev.serviceCharge) || 0);
             return { ...prev, items: newItems, totalAmount: newTotal };
         });
     };
 
-    const updateStatus = async (id, status) => {
+    const showBillResult = (billEmail, prefix) => {
+        if (billEmail?.sent) {
+            showNotification(`${prefix} Bill emailed to ${billEmail.to}`);
+        } else {
+            showNotification(`${prefix} Bill NOT emailed: ${billEmail?.reason || 'unknown error'}`, 'error');
+        }
+    };
+
+    const updateStatus = async (order, status) => {
+        if (status === 'Completed' && !window.confirm(`Mark this order as completed and email the bill to ${order.email || 'the guest'}?`)) {
+            return;
+        }
+        setBusyId(order._id);
         try {
-            const res = await adminFetch(`${API_URL}/orders/${id}`, {
+            const res = await adminFetch(`${API_URL}/orders/${order._id}`, {
                 method: 'PUT',
                 headers: authHeaders,
                 body: JSON.stringify({ status })
             });
             if (!res.ok) throw new Error('Update failed');
-            showNotification(`Order marked as ${status}`);
+            const data = await res.json();
+            if (status === 'Completed') {
+                showBillResult(data.billEmail, 'Order completed.');
+            } else {
+                showNotification(`Order marked as ${status}`);
+            }
             fetchOrders();
         } catch (error) {
             console.error(error);
             showNotification('Failed to update order status', 'error');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const resendBill = async (order) => {
+        if (!window.confirm(`Email the bill again to ${order.email || 'the guest'}?`)) return;
+        setBusyId(order._id);
+        try {
+            const res = await adminFetch(`${API_URL}/orders/${order._id}/send-bill`, {
+                method: 'POST',
+                headers: authHeaderOnly
+            });
+            if (!res.ok) throw new Error('Send failed');
+            const data = await res.json();
+            showBillResult(data.billEmail, '');
+            fetchOrders();
+        } catch (error) {
+            console.error(error);
+            showNotification('Failed to send the bill', 'error');
+        } finally {
+            setBusyId(null);
         }
     };
 
@@ -474,7 +514,18 @@ const Orders = ({ isEmbedded = false }) => {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        {getStatusBadge(order.status)}
+                                                        <div className="flex flex-col items-start gap-1">
+                                                            {getStatusBadge(order.status)}
+                                                            {busyId === order._id ? (
+                                                                <span className="text-[11px] font-medium text-gray-500">Sending bill…</span>
+                                                            ) : order.billSentAt ? (
+                                                                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700" title={`Sent to ${order.billSentTo || order.email}`}>
+                                                                    <MailCheck size={12} /> Bill emailed {new Date(order.billSentAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            ) : order.status === 'Completed' ? (
+                                                                <span className="text-[11px] font-medium text-red-600">Bill not emailed</span>
+                                                            ) : null}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
@@ -505,14 +556,15 @@ const Orders = ({ isEmbedded = false }) => {
                                                                         </button>
                                                                     )}
                                                                     <button 
-                                                                        onClick={() => updateStatus(order._id, 'Completed')}
-                                                                        className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-                                                                        title="Mark Complete"
+                                                                        onClick={() => updateStatus(order, 'Completed')}
+                                                                        disabled={busyId === order._id}
+                                                                        className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-40"
+                                                                        title="Mark Complete & email bill"
                                                                     >
                                                                         <CheckCircle2 size={18} />
                                                                     </button>
                                                                     <button 
-                                                                        onClick={() => updateStatus(order._id, 'Cancelled')}
+                                                                        onClick={() => updateStatus(order, 'Cancelled')}
                                                                         className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                                                                         title="Cancel Order"
                                                                     >
@@ -521,6 +573,18 @@ const Orders = ({ isEmbedded = false }) => {
                                                                 </>
                                                             )}
                                                             
+                                                            {order.status === 'Completed' && (
+                                                                <button
+                                                                    onClick={() => resendBill(order)}
+                                                                    disabled={busyId === order._id}
+                                                                    className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors disabled:opacity-40"
+                                                                    title={order.billSentAt ? 'Email bill again' : 'Email bill'}
+                                                                    aria-label={order.billSentAt ? 'Email bill again' : 'Email bill'}
+                                                                >
+                                                                    <Mail size={18} />
+                                                                </button>
+                                                            )}
+
                                                             {order.status !== 'Pending' && (
                                                                 <button 
                                                                     onClick={() => deleteOrder(order._id)}
